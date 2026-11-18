@@ -37,11 +37,13 @@ public final class OverlayController {
     public OverlayController(Context context,Runnable end) {
         Context app=context.getApplicationContext();
         Display display=app.getSystemService(android.hardware.display.DisplayManager.class).getDisplay(Display.DEFAULT_DISPLAY);
-        this.c=app.createWindowContext(display,WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,null);
+        // Keep screen geometry tied to the display, not a window context whose
+        // configuration can change to the small overlay's own bounds.
+        this.c=app.createDisplayContext(display);
         this.end=end;store=new Store(app);wm=this.c.getSystemService(WindowManager.class);
     }
     private int dp(float n) { return Glass.dp(c,n); }
-    private Rect bounds() { return wm.getCurrentWindowMetrics().getBounds(); }
+    private Rect bounds() { return wm.getMaximumWindowMetrics().getBounds(); }
     private int width() { return Math.max(1,bounds().width()); }
     private int height() { return Math.max(1,bounds().height()); }
     private WindowManager.LayoutParams params(int w,int h) {

@@ -81,7 +81,7 @@ public class OverlayTest {
             java.io.InputStream in=new ParcelFileDescriptor.AutoCloseInputStream(fd)) {
             java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();byte[] b=new byte[4096];int n;
             while((n=in.read(b))!=-1) bytes.write(b,0,n);
-            for(String line:bytes.toString("UTF-8").split("\n")) if(line.contains("spaces-handle")||line.contains("spaces-panel")) step(line.trim().substring(0,Math.min(1000,line.trim().length())));
+            for(String line:bytes.toString("UTF-8").split("\n")) if((line.contains("spaces-handle")||line.contains("spaces-panel")) && line.contains("frame=")) step(line.trim().substring(0,Math.min(1000,line.trim().length())));
         } catch(Exception e) { step("Input diagnostic: "+e.getClass().getSimpleName()); }
     }
     private void tap(float x,float y) { input("tap "+Math.round(x)+" "+Math.round(y));settle(); }
@@ -92,15 +92,16 @@ public class OverlayTest {
         inst.runOnMainSync(()->{assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after tap; "+controller.gestureStatus()),controller.isOpen());View arrow=collapse(controller.panelView());assertNotNull(arrow);assertTrue("Collapse control must be laid out",arrow.getWidth()>0 && arrow.getHeight()>0);arrow.getLocationOnScreen(xy);xy[0]+=arrow.getWidth()/2;xy[1]+=arrow.getHeight()/2;});
         step("tapping collapse arrow at "+xy[0]+","+xy[1]);tap(xy[0],xy[1]);step("collapse tap delivered");if(controller.isOpen()) inputWindows();inst.runOnMainSync(()->assertFalse("Collapse failed; "+controller.gestureStatus(),controller.isOpen()));
     }
-    @Test public void heldDragSnapsToTopThenTapOpens() {
+    @Test public void heldDragSnapsToTopThenDownwardSwipeOpens() {
         EdgeDock.Placement p=controller.placement();
         int w=activity.getSystemService(android.view.WindowManager.class).getCurrentWindowMetrics().getBounds().width();
         step("dragging handle to top with a held shell swipe");
         input("swipe "+(p.x+p.width/2)+" "+(p.y+p.height/2)+" "+(w/2)+" 2 600");settle();
         inst.runOnMainSync(()->{assertEquals(EdgeDock.TOP,controller.placement().edge);assertTrue(controller.placement().width>controller.placement().height);});
         p=controller.placement();int x=p.x+p.width/2,y=p.height/2;
-        step("opening top dock by tap; downward system-bar swipes are OS-reserved");
-        tap(x,y);if(!controller.isOpen()) inputWindows();
+        step("opening top dock by downward swipe");
+        int inward=Math.round(60*activity.getResources().getDisplayMetrics().density);
+        input("swipe "+x+" "+y+" "+x+" "+(y+inward)+" 80");settle();if(!controller.isOpen()) inputWindows();
         inst.runOnMainSync(()->assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after swipe; "+controller.gestureStatus()),controller.isOpen()));
     }
 
