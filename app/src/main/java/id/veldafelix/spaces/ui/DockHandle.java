@@ -12,6 +12,10 @@ public final class DockHandle extends View {
     private boolean collapse=false;
     public DockHandle(Context context) { super(context);setHapticFeedbackEnabled(false);setClickable(true);setFocusable(true); }
     public void direction(String side,boolean collapsing) { edge=EdgeDock.edge(side);collapse=collapsing;invalidate(); }
+    @Override protected void onSizeChanged(int w,int h,int oldw,int oldh) {
+        super.onSizeChanged(w,h,oldw,oldh);
+        setSystemGestureExclusionRects(java.util.Collections.singletonList(new Rect(0,0,w,h)));
+    }
     @Override protected void onDraw(Canvas c) {
         float d=getResources().getDisplayMetrics().density,w=getWidth(),h=getHeight();
         float visible=Math.min(12*d,EdgeDock.TOP.equals(edge)?h:w);

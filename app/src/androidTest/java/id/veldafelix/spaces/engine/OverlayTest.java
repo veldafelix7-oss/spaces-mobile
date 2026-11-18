@@ -61,4 +61,34 @@ public class OverlayTest {
         inst.runOnMainSync(()->{controller.hide();new Store(c).p.edit().remove("dock_edge").remove("dock_offset").putInt("handle_x",99999).putInt("handle_y",99999).commit();
             controller=new OverlayController(activity,()->{});controller.show();assertNotNull(controller.handleView());assertTrue(controller.placement().x>=0);assertTrue(controller.placement().y>=0);assertTrue(new Store(c).p.contains("dock_edge"));assertFalse(new Store(c).p.contains("handle_x"));});
     }
+    private void pointer(int action,long down,long at,float x,float y) {
+        android.view.MotionEvent e=android.view.MotionEvent.obtain(down,at,action,x,y,0);
+        assertTrue(inst.getUiAutomation().injectInputEvent(e,true));e.recycle();
+    }
+    private void tap(float x,float y) {
+        long now=android.os.SystemClock.uptimeMillis();pointer(android.view.MotionEvent.ACTION_DOWN,now,now,x,y);
+        pointer(android.view.MotionEvent.ACTION_UP,now,now+30,x,y);inst.waitForIdleSync();
+    }
+    @Test public void actualWindowTapsOpenAndCollapsePanel() {
+        EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);
+        final int[] xy=new int[2];
+        inst.runOnMainSync(()->{assertTrue(controller.isOpen());View arrow=collapse(controller.panelView());assertNotNull(arrow);arrow.getLocationOnScreen(xy);xy[0]+=arrow.getWidth()/2;xy[1]+=arrow.getHeight()/2;});
+        tap(xy[0],xy[1]);inst.runOnMainSync(()->assertFalse(controller.isOpen()));
+    }
+    @Test public void heldDragSnapsToTopThenDownwardSwipeOpens() {
+        EdgeDock.Placement p=controller.placement();long down=android.os.SystemClock.uptimeMillis();
+        pointer(android.view.MotionEvent.ACTION_DOWN,down,down,p.x+p.width/2f,p.y+p.height/2f);
+        android.os.SystemClock.sleep(320);
+        int w=activity.getSystemService(android.view.WindowManager.class).getCurrentWindowMetrics().getBounds().width();
+        long move=android.os.SystemClock.uptimeMillis();pointer(android.view.MotionEvent.ACTION_MOVE,down,move,w/2f,2);
+        pointer(android.view.MotionEvent.ACTION_UP,down,move+20,w/2f,2);inst.waitForIdleSync();
+        inst.runOnMainSync(()->{assertEquals(EdgeDock.TOP,controller.placement().edge);assertTrue(controller.placement().width>controller.placement().height);});
+        p=controller.placement();down=android.os.SystemClock.uptimeMillis();float x=p.x+p.width/2f,y=p.height/2f;
+        pointer(android.view.MotionEvent.ACTION_DOWN,down,down,x,y);
+        float inward=60*activity.getResources().getDisplayMetrics().density;
+        pointer(android.view.MotionEvent.ACTION_MOVE,down,down+30,x,y+inward);
+        pointer(android.view.MotionEvent.ACTION_UP,down,down+60,x,y+inward);inst.waitForIdleSync();
+        inst.runOnMainSync(()->assertTrue(controller.isOpen()));
+    }
+
 }

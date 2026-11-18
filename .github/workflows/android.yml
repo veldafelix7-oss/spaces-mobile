@@ -34,6 +34,10 @@ jobs:
           fi
       - name: Compile, unit tests, lint and instrumentation APK
         run: python3 scripts/ci-build.py testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
+      - name: Verify compatibility with installed preview signing identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/check-preview-signing.sh
       - name: APK checksum
         run: sha256sum app/build/outputs/apk/debug/*.apk > app/build/outputs/apk/debug/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
@@ -70,6 +74,10 @@ jobs:
         with:
           name: instrumentation-apks
           path: apks
+      - name: Download previous preview for update test
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download preview-0.1.0-b7891f8 --pattern spaces-mobile-preview.apk --dir previous
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -82,9 +90,16 @@ jobs:
           profile: pixel_2
           disable-animations: true
           script: |
-            adb install apks/debug/app-debug.apk
-            adb install apks/androidTest/debug/app-debug-androidTest.apk
             mkdir -p emulator-results
+            adb install previous/spaces-mobile-preview.apk
+            adb shell am start -W -n id.veldafelix.spaces.preview/id.veldafelix.spaces.MainActivity
+            adb shell am force-stop id.veldafelix.spaces.preview
+            adb shell run-as id.veldafelix.spaces.preview mkdir -p files
+            adb shell "run-as id.veldafelix.spaces.preview sh -c 'echo retained > files/update-check.txt'"
+            adb install -r apks/debug/app-debug.apk
+            adb shell run-as id.veldafelix.spaces.preview cat files/update-check.txt | tee emulator-results/update-data.txt
+            grep -qx retained emulator-results/update-data.txt
+            adb install apks/androidTest/debug/app-debug-androidTest.apk
             adb shell am instrument -w id.veldafelix.spaces.preview.test/androidx.test.runner.AndroidJUnitRunner | tee emulator-results/instrumentation.txt
             adb pull /sdcard/Android/data/id.veldafelix.spaces.preview/files/screenshots emulator-results/ || true
             adb logcat -d -s AndroidRuntime > emulator-results/crashes.txt
