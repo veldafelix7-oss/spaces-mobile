@@ -64,9 +64,25 @@ public class OverlayTest {
     private void step(String message) {
         android.os.Bundle status=new android.os.Bundle();status.putString("spaces_step",message);inst.sendStatus(2,status);
     }
+    private void pointer(int action,long down,float x,float y) {
+        android.view.MotionEvent e=android.view.MotionEvent.obtain(down,android.os.SystemClock.uptimeMillis(),action,x,y,0);
+        e.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
+        try { assertTrue("OS input injection rejected",inst.getUiAutomation().injectInputEvent(e,false)); }
+        finally { e.recycle(); }
+    }
     private void input(String args) {
-        try { shell("input touchscreen -d 0 "+args); }
-        catch(Exception e) { throw new AssertionError("Could not deliver shell touch input",e); }
+        String[] parts=args.split(" ");float x=Float.parseFloat(parts[1]),y=Float.parseFloat(parts[2]);
+        long down=android.os.SystemClock.uptimeMillis();pointer(android.view.MotionEvent.ACTION_DOWN,down,x,y);
+        if("swipe".equals(parts[0])) {
+            float tx=Float.parseFloat(parts[3]),ty=Float.parseFloat(parts[4]);int duration=Integer.parseInt(parts[5]);
+            int steps=Math.max(2,duration/16);
+            for(int i=1;i<=steps;i++) {
+                android.os.SystemClock.sleep(Math.max(1,duration/steps));
+                pointer(android.view.MotionEvent.ACTION_MOVE,down,x+(tx-x)*i/steps,y+(ty-y)*i/steps);
+            }
+            x=tx;y=ty;
+        } else android.os.SystemClock.sleep(40);
+        pointer(android.view.MotionEvent.ACTION_UP,down,x,y);
     }
     private void settle() {
         // A queued UI-frame latch is bounded; waiting for a globally idle accessibility stream
@@ -83,7 +99,7 @@ public class OverlayTest {
             while((n=in.read(b))!=-1) bytes.write(b,0,n);
             StringBuilder diagnostic=new StringBuilder();int count=0;
             for(String line:bytes.toString("UTF-8").split("\n")) {
-                if(line.contains("frame=") && count++<8) diagnostic.append(line.trim()).append(" | ");
+                if(line.contains("frame=") && count++<4) diagnostic.append(line.trim()).append(" | ");
                 if(line.contains("displayId=0") && (line.contains("rotation=")||line.contains("orientation="))) diagnostic.append(line.trim()).append(" | ");
             }
             step(diagnostic.toString());
