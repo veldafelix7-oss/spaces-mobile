@@ -63,7 +63,7 @@ public class OverlayTest {
     }
     private void pointer(int action,long down,long at,float x,float y) {
         android.view.MotionEvent e=android.view.MotionEvent.obtain(down,at,action,x,y,0);
-        assertTrue(inst.getUiAutomation().injectInputEvent(e,true));e.recycle();
+        e.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);assertTrue(inst.getUiAutomation().injectInputEvent(e,true));e.recycle();
     }
     private void tap(float x,float y) {
         long now=android.os.SystemClock.uptimeMillis();pointer(android.view.MotionEvent.ACTION_DOWN,now,now,x,y);

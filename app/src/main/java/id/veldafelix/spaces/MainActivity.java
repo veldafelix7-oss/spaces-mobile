@@ -28,6 +28,8 @@ public final class MainActivity extends Activity {
     private int tab=0;
     private ScrollView pageScroll;
     private final NavItem[] navigation=new NavItem[3];
+    private final Map<String,Boolean> installationCache=new HashMap<>();
+    private final Map<String,android.graphics.drawable.Drawable> iconCache=new HashMap<>();
     private boolean registered=false,launching=false,resumed=false;
     private String pendingLaunch;
     private final Handler main=new Handler(Looper.getMainLooper());
@@ -58,14 +60,13 @@ public final class MainActivity extends Activity {
         IntentFilter f=new IntentFilter(SessionService.READY);
         registerReceiver(sessionReady,f,Context.RECEIVER_NOT_EXPORTED);
         registered=true;
-        render();
     }
     private void immersive() {
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
             |View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
     @Override public void onWindowFocusChanged(boolean focused) { super.onWindowFocusChanged(focused);if(focused) immersive(); }
-    @Override protected void onResume() { super.onResume(); resumed=true; render(); }
+    @Override protected void onResume() { super.onResume(); resumed=true; installationCache.clear();iconCache.clear();render(); }
     @Override protected void onPause() { resumed=false; super.onPause(); }
     @Override protected void onSaveInstanceState(Bundle b) { super.onSaveInstanceState(b); b.putInt("tab",tab); }
     @Override protected void onDestroy() {
@@ -86,7 +87,15 @@ public final class MainActivity extends Activity {
         try { startActivity(intent); } catch(Exception e) { toast(t("Halaman tidak tersedia di HP ini.","This page is unavailable on this device.")); }
     }
     private boolean installed(String id) {
-        try { getPackageManager().getPackageInfo(id,0); return true; } catch(PackageManager.NameNotFoundException e) { return false; }
+        Boolean cached=installationCache.get(id);if(cached!=null) return cached;
+        boolean found;
+        try { getPackageManager().getPackageInfo(id,0);found=true; } catch(PackageManager.NameNotFoundException e) { found=false; }
+        installationCache.put(id,found);return found;
+    }
+    private android.graphics.drawable.Drawable appIcon(String id) throws PackageManager.NameNotFoundException {
+        android.graphics.drawable.Drawable icon=iconCache.get(id);
+        if(icon==null) { icon=getPackageManager().getApplicationIcon(id);iconCache.put(id,icon); }
+        return icon;
     }
     private String version(String id) {
         try { return getPackageManager().getPackageInfo(id,0).versionName; } catch(Exception e) { return "—"; }
@@ -198,7 +207,7 @@ public final class MainActivity extends Activity {
         badge.setPadding(dp(10),dp(6),dp(10),dp(6)); badge.setBackground(Glass.surface(0x25516676,dp(12)));
         FrameLayout.LayoutParams bp=new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.LEFT); bp.setMargins(dp(installed(game.id)?72:16),dp(22),dp(44),0); card.addView(badge,bp);
         try {
-            ImageView appIcon=new ImageView(this);appIcon.setImageDrawable(getPackageManager().getApplicationIcon(game.id));
+            ImageView appIcon=new ImageView(this);appIcon.setImageDrawable(appIcon(game.id));
             appIcon.setContentDescription(t("Ikon ","Icon ")+game.title);appIcon.setScaleType(ImageView.ScaleType.CENTER_CROP);
             appIcon.setBackground(Glass.surface(0xDFFFFFFF,dp(11)));appIcon.setClipToOutline(true);
             FrameLayout.LayoutParams ip=new FrameLayout.LayoutParams(dp(44),dp(44),Gravity.TOP|Gravity.LEFT);ip.setMargins(dp(16),dp(15),0,0);card.addView(appIcon,ip);
