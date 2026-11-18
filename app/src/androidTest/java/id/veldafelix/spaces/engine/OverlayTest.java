@@ -27,6 +27,9 @@ public class OverlayTest {
     }
     @Before public void start() throws Exception {
         inst=InstrumentationRegistry.getInstrumentation();c=inst.getTargetContext();
+        // Each test otherwise returns to the portrait launcher and immediately rotates
+        // again. Freeze the test display before constructing any overlay input surface.
+        assertTrue(inst.getUiAutomation().setRotation(android.app.UiAutomation.ROTATION_FREEZE_90));
         c.getSharedPreferences("spaces",0).edit().clear().commit();
         activity=(MainActivity)inst.startActivitySync(new Intent(c,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));inst.waitForIdleSync();
         shell("appops set "+c.getPackageName()+" SYSTEM_ALERT_WINDOW allow");
@@ -34,7 +37,7 @@ public class OverlayTest {
         inst.runOnMainSync(()->{controller=new OverlayController(activity,()->{});controller.show();});settle();
     }
     @After public void finish() throws Exception {
-        inst.runOnMainSync(()->{controller.hide();activity.finish();});inst.waitForIdleSync();shell("appops set "+c.getPackageName()+" SYSTEM_ALERT_WINDOW default");
+        inst.runOnMainSync(()->{controller.hide();activity.finish();});inst.waitForIdleSync();shell("appops set "+c.getPackageName()+" SYSTEM_ALERT_WINDOW default");inst.getUiAutomation().setRotation(android.app.UiAutomation.ROTATION_UNFREEZE);
     }
     @Test public void initialHandleIsFlushWithRightEdge() {
         inst.runOnMainSync(()->{assertNotNull(controller.handleView());assertEquals(EdgeDock.RIGHT,controller.placement().edge);
