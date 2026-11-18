@@ -70,7 +70,7 @@ public class OverlayTest {
     private void pointer(int action,long down,float x,float y) {
         android.view.MotionEvent e=android.view.MotionEvent.obtain(down,android.os.SystemClock.uptimeMillis(),action,x,y,0);
         e.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
-        try { assertTrue("OS input injection rejected",inst.getUiAutomation().injectInputEvent(e,false)); }
+        try { assertTrue("OS input injection rejected",inst.getUiAutomation().injectInputEvent(e,action==android.view.MotionEvent.ACTION_UP)); }
         finally { e.recycle(); }
     }
     private void input(String args) {
