@@ -127,11 +127,19 @@ public final class OverlayController {
         // One input channel for both states: replacing an overlay ViewRoot can leave
         // input geometry behind during rotation or an in-flight touch transaction.
         window=new FrameLayout(c) {
+            @Override public boolean dispatchKeyEvent(KeyEvent e) {
+                if(panel!=null && e.getKeyCode()==KeyEvent.KEYCODE_BACK) {
+                    if(e.getAction()==KeyEvent.ACTION_UP) postOnAnimation(OverlayController.this::close);
+                    return true;
+                }
+                return super.dispatchKeyEvent(e);
+            }
             @Override public boolean dispatchTouchEvent(MotionEvent e) {
                 note("window "+e.getActionMasked()+" local="+e.getX()+","+e.getY()+" raw="+e.getRawX()+","+e.getRawY());
                 return super.dispatchTouchEvent(e);
             }
         };
+        window.setFocusableInTouchMode(true);
         window.addView(handle,new FrameLayout.LayoutParams(-1,-1));
         try { wm.addView(window,hp);windowAttached=true;saveDock(); }
         catch(Exception error) { recordError(error);handle=null;window=null; }
@@ -226,10 +234,13 @@ public final class OverlayController {
         else cp.leftMargin=dp(16);
         frame.addView(collapse,cp);
         WindowManager.LayoutParams p=params(pw,ph);p.setTitle("spaces-panel");p.x=top?Math.max(0,Math.min(width()-pw,dock.x+dock.width/2-pw/2)):left?0:width()-pw;p.y=panelY;
+        // The open panel is an explicit interaction surface; the closed tab never
+        // takes focus. Keep the keyboard out and return focus when it collapses.
+        p.flags=(p.flags & ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)|WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM;
         panel=frame;
         try {
             window.removeAllViews();window.addView(panel,new FrameLayout.LayoutParams(-1,-1));
-            wm.updateViewLayout(window,p);
+            wm.updateViewLayout(window,p);window.requestFocus();
             store.p.edit().remove("overlay_error").apply();
         } catch(Exception error) {
             recordError(error);note("open failed: "+error.getClass().getSimpleName());
@@ -240,7 +251,7 @@ public final class OverlayController {
         if(window==null || handle==null || !windowAttached || hidden) return;
         try {
             window.removeAllViews();window.addView(handle,new FrameLayout.LayoutParams(-1,-1));
-            wm.updateViewLayout(window,hp);
+            window.clearFocus();wm.updateViewLayout(window,hp);
         } catch(Exception error) { recordError(error); }
     }
 
