@@ -1,15 +1,27 @@
 # Verified results — 2026-11-18
 
-## Current 0.1.1 revision — release blocked
+## Released 0.1.1 evidence
 
-- Tested source: `b87d82d`; [failed run 44351081183](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44351081183).
-- APK/test APK compilation, lint and **42 JVM tests passed**.
-- **22 Android 13 instrumentation tests ran; 20 passed, 2 failed**. Actual OS touch streams use asynchronous UiAutomation injection, not direct view dispatch. Earlier shell injection reproduced the same failures.
-- Passing input paths include initial right-handle tap, right inward swipe, and held drag snapping to top. Programmatic arrow clicks also pass, but this is not equivalent to real touch input.
-- Still failing: actual touch on the panel collapse arrow; downward swipe after snapping to top. The latter produces a visible `NotificationShade` input window in diagnostics; no claim that Android's mandatory system gesture can be bypassed. Earlier top-tap checks also failed. The collapse root cause is not established.
-- Deferred handle click now replaces windows after ACTION_UP. Closed tabs are detached, not left as invisible overlay windows. Named input-window/gesture diagnostics are retained. Display-context/max-display geometry changes have **not** eliminated these two failures.
-- Separate `.preview2` installation preserves the old `.preview` sandbox marker in CI. This is not migration or same-key update verification. Permanent production signing remains unconfigured.
-- **No 0.1.1 release published.** No new phone measurements, visual review, Focus validation or performance gains claimed.
+- Tested source: `b6bcdd7e4272b015682953ee302ea78aac41900d`.
+- [Successful run 44366688867](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44366688867): build, emulator and preview publication all succeeded.
+- [Published pre-release](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.1-b6bcdd7); `spaces-mobile-preview.apk`, **2,551,781 bytes**. SHA-256 is attached to the release.
+- APK/test APK compilation, Android lint and **45 JVM tests passed, with 0 failures/errors/skips**. Edge geometry now includes reserved top-band/clamping tests.
+- **25 Android 13 instrumentation tests passed**, including the prior suite plus:
+  - Actual right-handle tap and collapse-control center tap, without retrying a missed first tap.
+  - Held OS-input drag to top, then inward swipe from below the mandatory notification/cutout band.
+  - Right inward swipe opening.
+  - **Six open/close cycles**, twice on each dock (right/left/top), tapping the visible chevron and checking focus returns to the activity.
+  - Actual media-slider touch changes Android stream volume; original volume restored in `finally`.
+  - OS Back closes the interactive panel and returns focus.
+  - Physical navigation padding taps preserve the same rail; settings/data tests remain separate from actual OS-input assertions.
+- Closed/open states now share one overlay input window. The open panel temporarily takes input focus and excludes the keyboard; collapse restores nonfocusable dock params. This is separate from the DND/Focus setting and must still be checked against game-specific window-focus behavior on HiOS.
+- The narrow collapse View now matches the painted chevron's 12dp width/thickness; the parent also accepts a wider edge strip. Earlier tests exposed a mismatch between the padded center and the visible glyph. The final suite tests both the control center and visible glyph. No OS-input test is bypassed by calling `performClick()` or accepting a second tap.
+- Diagnostics retain the first-tap assertion even if a subsequent diagnostic tap succeeds. Earlier failures (20/22, then 21/22 and 23/24) remain in Actions history; one isolated passing tap was not accepted as final verification.
+- Test display orientation is stabilized before surface creation. UI-thread waits are bounded; actual events go through UiAutomation, with terminal-event acknowledgement. Failure thumbnails can be retrieved through bounded GitHub annotations when artifact redirects cannot be downloaded.
+- Separate `.preview2` installation preserves the old `.preview` private marker in CI. This is not migration or same-key update verification. Permanent production signing remains unconfigured.
+- A reduced emulator screenshot from the revision was visually inspected for basic home/panel layout via annotation retrieval. This is not inspection of every screen, real installed-game artwork or BG7 display behavior.
+- Local XML parsing, Python syntax and Git whitespace checks passed. No local Android SDK is present: Android builds/tests ran in Actions, not locally.
+- **Not verified on the revised APK:** BG7 game gestures/window focus, HiOS permission/lifecycle behavior, real incoming-call Focus behavior, game FPS, temperature/battery gains or zero overhead. Existing 0.1.0 phone feedback does not certify this revision.
 
 ## Released 0.1.0 evidence
 - Tested source: `b7891f807f59c1ee1b0948c1f43b31c93b99e58b`.

@@ -1,9 +1,11 @@
-# spaces : mobile — 0.1.1 preview (unreleased)
+# spaces : mobile — 0.1.1 preview
 
-**Release blocked:** build/lint/42 JVM tests pass, but 2 of 22 Android input tests fail (actual collapse-arrow tap and top-edge swipe). The changes below describe implementation, not completed touch validation. Do not distribute a failed-run artifact as a tested revision.
+**Verified in CI:** APK build, lint, 45 JVM tests and 25 Android 13 emulator tests passed. Real OS-input checks include six repeated right/left/top open-close cycles, collapse-center tap, drag/swipe, navigation padding, media volume and Back/focus return. [Tested run](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44366688867). This is not Tecno/HiOS or measured game-performance certification.
 
 Follow-up to real Tecno Spark 20C feedback:
 - Thin edge-docked sidebar tab with chevron. Hold and drag to snap left/right/top; top tab becomes horizontal. Edge and normalized position survive rotation/restart; legacy positions migrate.
+- The top tab sits just below Android's reserved status/notification/cutout band. It stays horizontal; the app does not override mandatory system gestures.
+- One overlay input window is reused for both states. The open panel takes temporary input focus (not DND/Focus mode), supports Back, and returns focus when closed; game-specific behavior still needs phone testing.
 - Compact session panel with a fixed collapse arrow, outside the scrolling controls; no large Close button. The closed handle is hidden while the panel is open.
 - Entire navigation tiles are touch targets; switching tabs retains the rail instead of rebuilding the full screen.
 - More visible static glass highlights/rims and subtle neutral background contrast. No live blur added.

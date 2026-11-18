@@ -16,6 +16,7 @@ For every row record pass/fail, actual result, app version and date. Never recor
 - [ ] All three tabs scroll and remain readable; ID/EN works; no haptic feedback.
 - [ ] Add only installed Flash/Blood Strike; reject other apps/missing games; remove/re-add persists.
 - [ ] Force-close/reopen maintains profiles.
+- [ ] 0.1.1 isolated preview installs alongside 0.1.0; old data stays present, new collection/permissions configured separately. End/recover old sessions first.
 - [ ] Same-key higher-version APK updates without losing local settings. Wrong key fails safely. Preview and release separate.
 
 ### Permissions and session lifecycle
@@ -43,6 +44,8 @@ For every row record pass/fail, actual result, app version and date. Never recor
 - [ ] Calls/messages silent, alarms permitted, original DND returns. Check normal calls and WA separately.
 - [ ] WA continues receiving messages; there is no WA shortcut/recorder.
 - [ ] Tap/swipe open, drag handle left/right/top, reopen panel after rotation, close restores touch access to game.
+- [ ] Top tab starts below the mandatory system band; notification swipe remains available above it. Test repeated chevron-center/glyph taps at all three docks.
+- [ ] Open panel takes input focus only while open. Game input/focus/audio resume after arrow or Back; check each game does not unexpectedly pause/reload.
 - [ ] Metrics visible only inside panel. Battery temp agrees with public battery data; RAM is system available RAM.
 - [ ] FPS explicitly unavailable; no simulated values.
 - [ ] TCP test labelled not game ping, two-second timeout, no periodic network polling.

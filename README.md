@@ -4,27 +4,25 @@ Native Android game space for **Tecno Spark 20C (BG7), Android 13 / HiOS 13**, d
 
 ## Download and verified checks
 
-[Download the Android 13 preview APK (~2.5 MB)](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.0-b7891f8/spaces-mobile-preview.apk) · [Release + checksum](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.0-b7891f8)
+[Download 0.1.1 Android 13 preview APK (~2.6 MB)](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.1-b6bcdd7/spaces-mobile-preview.apk) · [Release + checksum](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.1-b6bcdd7)
 
-**The linked 0.1.0 APK passed 30 JVM tests + 13 Android 13 emulator tests; APK compilation and lint passed.** See [actual test results and unverified areas](docs/TEST-RESULTS.md). No Tecno/game performance gains have been measured yet.
+**45 JVM tests + 25 Android 13 emulator tests passed; APK compilation and lint passed.** Includes real OS touches, six repeated dock open/close cycles, media-volume touch control, Back/focus return, navigation padding taps, DND recovery and session history. [Successful run](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44366688867). See [test evidence and unverified areas](docs/TEST-RESULTS.md). No measured Tecno/game performance gains are claimed.
 
-### 0.1.1 revision — NOT RELEASED
+### Important: separate installation, not an in-place update
 
-The UI/sidebar revision builds and passes lint and **42 JVM tests**, but its expanded Android 13 suite still has **2 failures out of 22 tests**: actual collapse-arrow touch and top-edge swipe opening. Top-edge diagnostics show Android's notification shade receiving the gesture; the collapse failure remains unresolved. Do not treat successful direct `performClick()` tests as proof that real touches work. [Latest checked run](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44351081183).
+0.1.1 uses isolated ID `id.veldafelix.spaces.preview2` and label `spaces : mobile · 0.1.1` because the original preview signing key could not be recovered. **Do not uninstall the old app or clear its data.** Old app/data stay separate; collection and permissions must be configured again. End/recover old sessions before using the new install. This is **not migration or a permanent signing solution**. [Original 0.1.0 preview](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.0-b7891f8) remains available.
 
-The revision uses isolated ID `id.veldafelix.spaces.preview2` and label `spaces : mobile · 0.1.1` because the original preview signing key could not be recovered. This is **not an in-place update or a signing solution**: old app/data stay separate; collection and permissions would need configuring again. Do not uninstall the old app or clear its data. End/recover its sessions before using another install. No revised APK has been released.
-
-## Released status: 0.1.0 preview, not a proven performance booster
+## Released status: 0.1.1 preview, not a proven performance booster
 
 The app is functional groundwork with honest capability boundaries. A command's successful readback is **not** proof of a higher FPS. Testing on the actual BG7 is necessary; emulator results cannot certify HiOS or game compatibility.
 
 ### Implemented
 - Initially empty collection; opt in to installed `com.tencent.igfit` (PUBGM FLASH) and `com.netease.newspike` (Blood Strike). Other apps cannot be added; games are not bundled/downloaded.
-- Indonesian/English UI, landscape in both directions, original lightweight vector game scenes and lion emblem.
+- Indonesian/English UI, landscape in both directions, original lightweight vector game scenes and lion emblem, plus real icons loaded locally from installed games.
 - Per-game Eco/Balanced/Performance preferences (Android GameManager) and supported 60/90 Hz display settings, optional through Shizuku. Balanced/System defaults do not force performance settings.
 - Optional Focus mode using Android DND (calls/messages silenced, alarms retained; actual OEM behavior must be verified).
 - Foreground session started only from this app, ongoing stop action, optional usage-based session end (30-second launch grace, 20-second absence grace; sampled every 10 seconds).
-- Movable overlay handle; quick inward swipe/tap opens metrics; drag repositions. No persistent numeric HUD while closed.
+- Thin edge-docked tab; quick inward swipe/tap opens metrics; hold and drag snaps left/right/top. Top sits just below the OS-reserved notification/cutout band, not over mandatory system gestures. No persistent numeric HUD while closed.
 - Real battery temperature, available system RAM, battery level, media-volume control, brightness-settings shortcut, optional explicitly labelled TCP connectivity test.
 - Last 30 local sessions and temperature-over-time chart. Up to 1080 samples per session at 10-second intervals (rolling 3 hours). No invented FPS or 1% low.
 - Durable write-ahead journal, readback and compare-before-restore; preserves externally changed values. Explicit recovery after interruption.
@@ -35,7 +33,7 @@ Render downscale (especially HiOS Android 13), SurfaceFlinger FPS capture, proce
 
 ## Build and install (phone-only friendly)
 
-GitHub Actions → **Android checks & preview APK** → successful run → artifact **spaces-mobile-preview**. Extract the ZIP and install `app-debug.apk` on the phone. Android will request permission for the browser/file manager to install unknown apps. The published 0.1.0 preview application ID is `id.veldafelix.spaces.preview`; unreleased 0.1.1 source uses `.preview2`. Do not install build artifacts from a run whose emulator checks failed.
+GitHub Actions → **Android checks & preview APK** → successful run → artifact **spaces-mobile-preview**. Extract the ZIP and install `app-debug.apk` on the phone. Android will request permission for the browser/file manager to install unknown apps. The 0.1.1 preview application ID is `id.veldafelix.spaces.preview2` (0.1.0 used `.preview`). Do not install build artifacts from a run whose emulator checks failed.
 
 The CI preview debug signing key is reused through Actions cache when available (cache eviction can still change it). For reliable updates it can be fixed using repository secret `PREVIEW_KEYSTORE_BASE64` (standard Android debug credentials). Without the secret, a cache miss generates a new debug key; later APKs may not install as updates. Never uninstall to work around this without understanding local data will be lost. A signed release uses a **separate**, private key and application ID.
 
