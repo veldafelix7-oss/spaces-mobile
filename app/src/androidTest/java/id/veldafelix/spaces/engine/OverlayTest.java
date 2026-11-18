@@ -64,9 +64,9 @@ public class OverlayTest {
     private void step(String message) {
         android.os.Bundle status=new android.os.Bundle();status.putString("spaces_step",message);inst.sendStatus(2,status);
     }
-    private void pointer(int action,long down,long at,float x,float y) {
-        android.view.MotionEvent e=android.view.MotionEvent.obtain(down,at,action,x,y,0);
-        e.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);inst.sendPointerSync(e);e.recycle();
+    private void input(String args) {
+        try { shell("input touchscreen "+args); }
+        catch(Exception e) { throw new AssertionError("Could not deliver shell touch input",e); }
     }
     private void settle() {
         // A queued UI-frame latch is bounded; waiting for a globally idle accessibility stream
@@ -76,11 +76,7 @@ public class OverlayTest {
         try { assertTrue("Overlay UI frame timed out",frame.await(4,java.util.concurrent.TimeUnit.SECONDS)); }
         catch(InterruptedException e) { Thread.currentThread().interrupt();throw new AssertionError(e); }
     }
-    private void tap(float x,float y) {
-        long now=android.os.SystemClock.uptimeMillis();pointer(android.view.MotionEvent.ACTION_DOWN,now,now,x,y);
-        android.os.SystemClock.sleep(30);
-        pointer(android.view.MotionEvent.ACTION_UP,now,android.os.SystemClock.uptimeMillis(),x,y);settle();
-    }
+    private void tap(float x,float y) { input("tap "+Math.round(x)+" "+Math.round(y));settle(); }
     @Test public void actualWindowTapsOpenAndCollapsePanel() {
         step("opening by actual handle tap");
         EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);step("panel opened; locating collapse arrow");
@@ -89,18 +85,15 @@ public class OverlayTest {
         step("tapping collapse arrow at "+xy[0]+","+xy[1]);tap(xy[0],xy[1]);step("collapse tap delivered");inst.runOnMainSync(()->assertFalse(controller.isOpen()));
     }
     @Test public void heldDragSnapsToTopThenDownwardSwipeOpens() {
-        EdgeDock.Placement p=controller.placement();long down=android.os.SystemClock.uptimeMillis();
-        pointer(android.view.MotionEvent.ACTION_DOWN,down,down,p.x+p.width/2f,p.y+p.height/2f);
-        android.os.SystemClock.sleep(320);
+        EdgeDock.Placement p=controller.placement();
         int w=activity.getSystemService(android.view.WindowManager.class).getCurrentWindowMetrics().getBounds().width();
-        long move=android.os.SystemClock.uptimeMillis();pointer(android.view.MotionEvent.ACTION_MOVE,down,move,w/2f,2);
-        pointer(android.view.MotionEvent.ACTION_UP,down,move+20,w/2f,2);settle();
+        step("dragging handle to top with a held shell swipe");
+        input("swipe "+(p.x+p.width/2)+" "+(p.y+p.height/2)+" "+(w/2)+" 2 600");settle();
         inst.runOnMainSync(()->{assertEquals(EdgeDock.TOP,controller.placement().edge);assertTrue(controller.placement().width>controller.placement().height);});
-        p=controller.placement();down=android.os.SystemClock.uptimeMillis();float x=p.x+p.width/2f,y=p.height/2f;
-        pointer(android.view.MotionEvent.ACTION_DOWN,down,down,x,y);
-        float inward=60*activity.getResources().getDisplayMetrics().density;
-        pointer(android.view.MotionEvent.ACTION_MOVE,down,down+30,x,y+inward);
-        pointer(android.view.MotionEvent.ACTION_UP,down,down+60,x,y+inward);settle();
+        p=controller.placement();int x=p.x+p.width/2,y=p.height/2;
+        int inward=Math.round(60*activity.getResources().getDisplayMetrics().density);
+        step("opening top dock with downward shell swipe");
+        input("swipe "+x+" "+y+" "+x+" "+(y+inward)+" 80");settle();
         inst.runOnMainSync(()->assertTrue(controller.isOpen()));
     }
 
