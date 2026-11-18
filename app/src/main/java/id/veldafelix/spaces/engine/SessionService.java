@@ -59,7 +59,7 @@ public final class SessionService extends Service {
         Intent open=new Intent(this,MainActivity.class);
         PendingIntent launch=PendingIntent.getActivity(this,0,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
         PendingIntent stop=PendingIntent.getService(this,1,new Intent(this,SessionService.class).setAction(STOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-        Notification n=new Notification.Builder(this,"session").setSmallIcon(id.veldafelix.spaces.R.drawable.ic_lion)
+        Notification n=new Notification.Builder(this,"session").setSmallIcon(id.veldafelix.spaces.R.drawable.ic_status)
             .setContentTitle("spaces : mobile · "+GameSpec.find(game).title)
             .setContentText(store.t("Sesi aktif · ketuk untuk kembali","Session active · tap to return"))
             .setContentIntent(launch).setOngoing(true)

@@ -12,6 +12,10 @@ import rikka.shizuku.Shizuku;
 public final class PrivilegeBridge {
     private static volatile IShell shell;
     private static boolean binding;
+    static { Shizuku.addBinderDeadListener(PrivilegeBridge::reset); }
+    private static synchronized void reset() {
+        shell=null; binding=false; ready.countDown(); ready=new CountDownLatch(1);
+    }
     private static volatile CountDownLatch ready=new CountDownLatch(1);
     private static final ServiceConnection CONNECTION=new ServiceConnection() {
         @Override public void onServiceConnected(ComponentName n, IBinder binder) { shell=IShell.Stub.asInterface(binder); ready.countDown(); }
@@ -40,7 +44,7 @@ public final class PrivilegeBridge {
         try {
             if(shell==null) ready.await(6,TimeUnit.SECONDS);
             IShell s=shell;
-            if(s==null) return "ERR:Shizuku connection timeout";
+            if(s==null) { reset(); return "ERR:Shizuku connection timeout"; }
             return s.execute(op,key,value);
         } catch(Exception e) { shell=null; synchronized(PrivilegeBridge.class) { binding=false; ready=new CountDownLatch(1); } return "ERR:"+e.getClass().getSimpleName(); }
     }

@@ -11,15 +11,14 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
       - name: Restore stable preview signing identity
         env:
@@ -30,7 +29,7 @@ jobs:
             printf '%s' "$PREVIEW_KEYSTORE" | base64 --decode > ~/.android/debug.keystore
           fi
       - name: Compile, unit tests, lint and instrumentation APK
-        run: ./gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
+        run: python3 scripts/ci-build.py testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
       - name: APK checksum
         run: sha256sum app/build/outputs/apk/debug/*.apk > app/build/outputs/apk/debug/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
@@ -44,6 +43,7 @@ jobs:
         with:
           name: build-test-reports
           path: |
+            build.log
             app/build/reports/
             app/build/test-results/
       - uses: actions/upload-artifact@v4
@@ -54,15 +54,14 @@ jobs:
             app/build/outputs/apk/androidTest/debug/*.apk
   emulator:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
       - uses: actions/download-artifact@v4
         with:
           name: instrumentation-apks

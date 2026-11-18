@@ -9,6 +9,10 @@ public class SessionRulesTest {
     @Test public void neverOverwriteUserChanges() { assertFalse(SessionRules.canRestore("60","90")); }
     @Test public void restoresOwnValue() { assertTrue(SessionRules.canRestore("90.0\n","90.0")); }
     @Test public void unknownCurrentNeverRestored() { assertFalse(SessionRules.canRestore(null,"90")); }
+    @Test public void numericRefreshSnapshotsAreEquivalent() { assertTrue(SessionRules.equivalent("refresh","60.0","60")); }
+    @Test public void nullSettingIsNotZero() { assertFalse(SessionRules.equivalent("refresh","null","0")); }
+    @Test public void modeComparisonIsStrict() { assertFalse(SessionRules.equivalent("game","2.0","2")); }
+    @Test public void changedRefreshIsPreserved() { assertFalse(SessionRules.equivalent("refresh","90","60")); }
     @Test public void catalogIsExactlyTwoGames() { assertEquals(2,GameSpec.ALL.length); assertNotNull(GameSpec.find("com.tencent.igfit")); assertNotNull(GameSpec.find("com.netease.newspike")); }
     @Test public void unsupportedGameIsRejected() { assertNull(GameSpec.find("com.whatsapp")); assertNull(GameSpec.find(null)); }
 }

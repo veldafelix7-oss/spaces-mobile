@@ -40,6 +40,10 @@ public final class Engine {
             String mode=ShellPolicy.parseGameMode(out);
             return mode==null?"ERR:unrecognized GameManager output":mode;
         }
+        if(kind.equals("refresh") && !out.equals("null")) {
+            try { ShellPolicy.command(ShellPolicy.WRITE_SETTING,key,out); }
+            catch(SecurityException error) { return "ERR:unrecognized display setting"; }
+        }
         return out;
     }
     private String write(String kind,String key,String value) {
@@ -108,13 +112,13 @@ public final class Engine {
                 String kind=e.getString("kind"),key=e.getString("key"),old=e.getString("old"),applied=e.getString("applied");
                 String current=read(kind,key);
                 if(current.startsWith("ERR:")) { left.put(e); log.append(key).append(": recovery pending\n"); continue; }
-                if(current.equals(old)) { log.append(key).append(": already restored\n"); continue; }
-                if(!SessionRules.canRestore(current,applied)) {
+                if(SessionRules.equivalent(kind,current,old)) { log.append(key).append(": already restored\n"); continue; }
+                if(!SessionRules.equivalent(kind,current,applied)) {
                     // Never overwrite changes made by the user/OEM after we applied ours.
                     log.append(key).append(": changed elsewhere, preserved\n"); continue;
                 }
                 String result=write(kind,key,old);
-                if(result.startsWith("ERR:") || !read(kind,key).equals(old)) { left.put(e); log.append(key).append(": recovery pending\n"); }
+                if(result.startsWith("ERR:") || !SessionRules.equivalent(kind,read(kind,key),old)) { left.put(e); log.append(key).append(": recovery pending\n"); }
                 else log.append(key).append(": restored\n");
             } catch(Exception error) { left.put(e); }
         }
