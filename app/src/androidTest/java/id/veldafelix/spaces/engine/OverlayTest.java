@@ -34,10 +34,23 @@ public class OverlayTest {
         activity=(MainActivity)inst.startActivitySync(new Intent(c,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));inst.waitForIdleSync();
         shell("appops set "+c.getPackageName()+" SYSTEM_ALERT_WINDOW allow");
         assertTrue(android.provider.Settings.canDrawOverlays(c));
+        awaitActivityFocus();
         inst.runOnMainSync(()->{controller=new OverlayController(activity,()->{});controller.show();});settle();
     }
     @After public void finish() throws Exception {
-        inst.runOnMainSync(()->{controller.hide();activity.finish();});inst.waitForIdleSync();shell("appops set "+c.getPackageName()+" SYSTEM_ALERT_WINDOW default");inst.getUiAutomation().setRotation(android.app.UiAutomation.ROTATION_UNFREEZE);
+        inst.runOnMainSync(()->{controller.hide();activity.finish();});inst.waitForIdleSync();shell("appops set "+c.getPackageName()+" SYSTEM_ALERT_WINDOW default");
+    }
+    @AfterClass public static void restoreDisplayRotation() {
+        InstrumentationRegistry.getInstrumentation().getUiAutomation().setRotation(android.app.UiAutomation.ROTATION_UNFREEZE);
+    }
+    private void awaitActivityFocus() {
+        long deadline=android.os.SystemClock.uptimeMillis()+4000;final boolean[] focused={false};
+        do {
+            inst.runOnMainSync(()->focused[0]=activity.hasWindowFocus());
+            if(focused[0]) return;
+            android.os.SystemClock.sleep(40);
+        } while(android.os.SystemClock.uptimeMillis()<deadline);
+        fail("Underlying activity did not acquire input focus");
     }
     @Test public void initialHandleIsFlushWithRightEdge() {
         inst.runOnMainSync(()->{assertNotNull(controller.handleView());assertEquals(EdgeDock.RIGHT,controller.placement().edge);
@@ -136,7 +149,7 @@ public class OverlayTest {
         int w=activity.getSystemService(android.view.WindowManager.class).getCurrentWindowMetrics().getBounds().width();
         step("dragging handle to top with a held OS touch stream");
         input("swipe "+(p.x+p.width/2)+" "+(p.y+p.height/2)+" "+(w/2)+" 2 600");settle();
-        inst.runOnMainSync(()->{assertEquals(EdgeDock.TOP,controller.placement().edge);assertTrue(controller.placement().width>controller.placement().height);});
+        inst.runOnMainSync(()->{assertEquals(controller.gestureStatus(),EdgeDock.TOP,controller.placement().edge);assertTrue(controller.placement().width>controller.placement().height);});
         p=controller.placement();int x=p.x+p.width/2,y=p.y+p.height/2;
         step("opening top dock by downward swipe");
         int inward=Math.round(60*activity.getResources().getDisplayMetrics().density);
@@ -149,6 +162,48 @@ public class OverlayTest {
         int inward=Math.round(60*activity.getResources().getDisplayMetrics().density);
         input("swipe "+x+" "+y+" "+(x-inward)+" "+y+" 80");settle();
         inst.runOnMainSync(()->assertTrue("Right swipe failed; "+controller.gestureStatus(),controller.isOpen()));
+    }
+
+    private void tapCollapseGlyph(String edge) {
+        final int[] xy=new int[2];int six=Math.round(6*activity.getResources().getDisplayMetrics().density);
+        inst.runOnMainSync(()->{
+            View arrow=collapse(controller.panelView());assertNotNull(arrow);arrow.getLocationOnScreen(xy);
+            xy[0]+=EdgeDock.TOP.equals(edge)?arrow.getWidth()/2:EdgeDock.LEFT.equals(edge)?arrow.getWidth()-six:six;
+            xy[1]+=EdgeDock.TOP.equals(edge)?arrow.getHeight()-six:arrow.getHeight()/2;
+        });
+        tap(xy[0],xy[1]);
+    }
+    @Test public void everyDockOpensAndClosesRepeatedlyAtVisibleChevron() {
+        for(String edge:new String[]{EdgeDock.RIGHT,EdgeDock.LEFT,EdgeDock.TOP}) for(int cycle=0;cycle<2;cycle++) {
+            inst.runOnMainSync(()->controller.moveTo(edge,.55f));settle();
+            EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);
+            inst.runOnMainSync(()->assertTrue("Open "+edge+": "+controller.gestureStatus(),controller.isOpen()));
+            tapCollapseGlyph(edge);
+            inst.runOnMainSync(()->assertFalse("Close "+edge+": "+controller.gestureStatus(),controller.isOpen()));
+            awaitActivityFocus();
+        }
+    }
+    private android.widget.SeekBar seekBar(View view) {
+        if(view instanceof android.widget.SeekBar) return (android.widget.SeekBar)view;
+        if(view instanceof ViewGroup) for(int i=0;i<((ViewGroup)view).getChildCount();i++) {
+            android.widget.SeekBar found=seekBar(((ViewGroup)view).getChildAt(i));if(found!=null)return found;
+        }
+        return null;
+    }
+    @Test public void actualPanelTouchChangesMediaVolumeAndRestoresFocus() {
+        android.media.AudioManager audio=c.getSystemService(android.media.AudioManager.class);int stream=android.media.AudioManager.STREAM_MUSIC;
+        int old=audio.getStreamVolume(stream);
+        try {
+            audio.setStreamVolume(stream,0,0);
+            EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);
+            final int[] xy=new int[2];
+            inst.runOnMainSync(()->{
+                assertTrue(controller.isOpen());android.widget.SeekBar bar=seekBar(controller.panelView());assertNotNull(bar);assertTrue(bar.isShown());
+                bar.getLocationOnScreen(xy);xy[0]+=bar.getWidth()*3/4;xy[1]+=bar.getHeight()/2;
+            });
+            tap(xy[0],xy[1]);assertTrue("Media control must receive OS touches",audio.getStreamVolume(stream)>0);
+            tapCollapseGlyph(EdgeDock.RIGHT);inst.runOnMainSync(()->assertFalse(controller.isOpen()));awaitActivityFocus();
+        } finally { audio.setStreamVolume(stream,old,0); }
     }
 
 }
