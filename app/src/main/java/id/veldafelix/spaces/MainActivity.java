@@ -26,6 +26,8 @@ public final class MainActivity extends Activity {
     private Store store;
     private LinearLayout page;
     private int tab=0;
+    private ScrollView pageScroll;
+    private final NavItem[] navigation=new NavItem[3];
     private boolean registered=false,launching=false,resumed=false;
     private String pendingLaunch;
     private final Handler main=new Handler(Looper.getMainLooper());
@@ -44,7 +46,11 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state); store=new Store(this);
         if(state!=null) tab=state.getInt("tab",0);
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        WindowManager.LayoutParams window=getWindow().getAttributes();
+        window.layoutInDisplayCutoutMode=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
+        getWindow().setAttributes(window);
+        getWindow().setDecorFitsSystemWindows(false);
+        immersive();
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         Shizuku.addRequestPermissionResultListener(shizukuResult);
         Shizuku.addBinderReceivedListenerSticky(binderReceived);
@@ -54,6 +60,11 @@ public final class MainActivity extends Activity {
         registered=true;
         render();
     }
+    private void immersive() {
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            |View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+    }
+    @Override public void onWindowFocusChanged(boolean focused) { super.onWindowFocusChanged(focused);if(focused) immersive(); }
     @Override protected void onResume() { super.onResume(); resumed=true; render(); }
     @Override protected void onPause() { resumed=false; super.onPause(); }
     @Override protected void onSaveInstanceState(Bundle b) { super.onSaveInstanceState(b); b.putInt("tab",tab); }
@@ -93,13 +104,9 @@ public final class MainActivity extends Activity {
         String[] symbols={"◈","≋","◎"}; String[] titles={t("Main","Play"),t("Performa","Engine"),t("Perangkat","Device")};
         for(int i=0;i<3;i++) {
             final int index=i;
-            LinearLayout nav=Glass.column(this); nav.setGravity(Gravity.CENTER); nav.setPadding(0,dp(6),0,dp(6));
-            if(i==tab) nav.setBackground(Glass.surface(0xFAFFFFFF,dp(17)));
-            TextView glyph=text(symbols[i],22,i==tab?Glass.ACCENT:Glass.MUTED,false); nav.addView(glyph);
-            Glass.gap(nav,3); nav.addView(text(titles[i],10,i==tab?Glass.INK:Glass.MUTED,i==tab));
-            nav.setContentDescription(titles[i]); nav.setClickable(true); nav.setFocusable(true); nav.setHapticFeedbackEnabled(false);
-            nav.setOnClickListener(v->{ if(tab!=index) { tab=index; render(); } });
-            rail.addView(nav,new LinearLayout.LayoutParams(-1,dp(58))); Glass.gap(rail,3);
+            NavItem nav=new NavItem(this,symbols[i],titles[i],()->selectTab(index));
+            nav.setTag("nav_"+index);nav.active(i==tab);navigation[i]=nav;
+            rail.addView(nav,new LinearLayout.LayoutParams(-1,dp(58)));Glass.gap(rail,3);
         }
         View spacer=new View(this); rail.addView(spacer,new LinearLayout.LayoutParams(1,0,1));
         TextView language=text(store.en()?"EN":"ID",11,Glass.ACCENT,true); language.setGravity(Gravity.CENTER);
@@ -109,18 +116,33 @@ public final class MainActivity extends Activity {
         LinearLayout body=Glass.column(this); shell.addView(body,new LinearLayout.LayoutParams(0,-1,1));
         LinearLayout header=Glass.row(this);
         LinearLayout heading=Glass.column(this); heading.addView(text("spaces : mobile",26,Glass.INK,true)); Glass.gap(heading,3);
-        heading.addView(text(t("RUANG MAIN. TANPA RAMAI.","YOUR SPACE. LESS NOISE."),9,Glass.MUTED,true));
+        heading.addView(text(t("RUANG BERMAIN PRIBADI","YOUR PERSONAL GAME SPACE"),9,Glass.MUTED,true));
         header.addView(heading,new LinearLayout.LayoutParams(0,-2,1));
         String state=PrivilegeBridge.state();
-        TextView status=text("●  "+(state.equals("ready")?"Shizuku "+t("siap","ready"):t("Mode standar","Standard mode")),11,Glass.ACCENT,true);
+        TextView status=text("●  "+(state.equals("ready")?t("Shizuku terhubung","Shizuku connected"):state.equals("permission")?t("Shizuku perlu izin","Shizuku needs permission"):t("Shizuku belum terhubung","Shizuku not connected")),10,Glass.ACCENT,true);
         status.setPadding(dp(12),dp(9),dp(12),dp(9)); status.setBackground(Glass.surface(0x99FFFFFF,dp(20)));
-        status.setOnClickListener(v->{ tab=2; render(); }); header.addView(status);
+        status.setMinHeight(dp(44));status.setGravity(Gravity.CENTER);status.setOnClickListener(v->selectTab(2)); header.addView(status);
         body.addView(header); Glass.gap(body,17);
-        ScrollView scroll=new ScrollView(this); scroll.setFillViewport(true); scroll.setClipToPadding(false); scroll.setVerticalScrollBarEnabled(false);
+        ScrollView scroll=new ScrollView(this);pageScroll=scroll; scroll.setFillViewport(true); scroll.setClipToPadding(false); scroll.setVerticalScrollBarEnabled(false);
         page=Glass.column(this); page.setPadding(0,0,0,dp(12)); scroll.addView(page,new ScrollView.LayoutParams(-1,-2));
         body.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
         if(tab==0) home(); else if(tab==1) engine(); else device();
-        setContentView(root);
+        root.setOnApplyWindowInsetsListener((v,insets)->{
+            DisplayCutout cutout=insets.getDisplayCutout();
+            int left=cutout==null?0:cutout.getSafeInsetLeft(),right=cutout==null?0:cutout.getSafeInsetRight();
+            shell.setPadding(Math.max(dp(14),left+dp(6)),dp(14),Math.max(dp(20),right+dp(6)),dp(10));
+            return insets;
+        });
+        setContentView(root);root.requestApplyInsets();
+    }
+    private void selectTab(int next) {
+        if(next<0 || next>2 || page==null) return;
+        if(tab==next) return;
+        tab=next;
+        for(int i=0;i<navigation.length;i++) if(navigation[i]!=null) navigation[i].active(i==tab);
+        page.removeAllViews();
+        if(tab==0) home(); else if(tab==1) engine(); else device();
+        pageScroll.scrollTo(0,0);
     }
     private void titleRow(String title,String subtitle,String action,Runnable click) {
         LinearLayout row=Glass.row(this), left=Glass.column(this);
@@ -141,13 +163,13 @@ public final class MainActivity extends Activity {
             controls.addView(button(t("Kembali ke game","Return to game"),true,()->launchGame(store.p.getString("active_game","")))); Glass.gap(controls,8);
             controls.addView(button(t("Akhiri & pulihkan","End & restore"),false,this::endSession)); active.addView(controls); page.addView(active); Glass.gap(page,12);
         }
-        titleRow(t("Koleksi lo","Your collection"),t("Dua game. Satu ruang yang tenang.","Two games. One quiet space."),t("＋ Tambah game","＋ Add game"),this::addGames);
+        titleRow(t("Koleksi game","Your collection"),t("Pilih game untuk memulai sesi.","Choose a game to start a session."),t("＋ Tambah game","＋ Add game"),this::addGames);
         int count=0; for(GameSpec g:GameSpec.ALL) if(store.added(g.id)) count++;
         if(count==0) {
             LinearLayout empty=Glass.card(this); empty.setGravity(Gravity.CENTER); empty.setMinimumHeight(dp(190));
-            empty.addView(text(t("Ruangnya siap. Game-nya pilih dulu.","Your space is ready. Pick your games."),19,Glass.INK,true)); Glass.gap(empty,9);
+            empty.addView(text(t("Tambahkan game untuk mulai","Add a game to get started"),19,Glass.INK,true)); Glass.gap(empty,9);
             TextView note=text(t("Tambahkan PUBG Flash atau Blood Strike yang sudah terpasang.","Add an installed copy of PUBG Flash or Blood Strike."),12,Glass.MUTED,false); note.setGravity(Gravity.CENTER); empty.addView(note); Glass.gap(empty,16);
-            empty.addView(button(t("Pilih dari HP","Choose from device"),true,this::addGames)); page.addView(empty);
+            empty.addView(button(t("Pilih game terpasang","Choose installed games"),true,this::addGames)); page.addView(empty);
         } else {
             LinearLayout games=Glass.row(this); games.setGravity(Gravity.TOP);
             for(GameSpec g:GameSpec.ALL) if(store.added(g.id)) {
@@ -174,7 +196,13 @@ public final class MainActivity extends Activity {
         FrameLayout card=new FrameLayout(this); card.addView(new GameArt(this,game==GameSpec.ALL[0]),new FrameLayout.LayoutParams(-1,-1));
         TextView badge=text(installed(game.id)?t("TERPASANG","INSTALLED"):t("TIDAK TERPASANG","NOT INSTALLED"),9,Color.WHITE,true);
         badge.setPadding(dp(10),dp(6),dp(10),dp(6)); badge.setBackground(Glass.surface(0x25516676,dp(12)));
-        FrameLayout.LayoutParams bp=new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.LEFT); bp.setMargins(dp(16),dp(15),0,0); card.addView(badge,bp);
+        FrameLayout.LayoutParams bp=new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.LEFT); bp.setMargins(dp(installed(game.id)?72:16),dp(22),dp(44),0); card.addView(badge,bp);
+        try {
+            ImageView appIcon=new ImageView(this);appIcon.setImageDrawable(getPackageManager().getApplicationIcon(game.id));
+            appIcon.setContentDescription(t("Ikon ","Icon ")+game.title);appIcon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            appIcon.setBackground(Glass.surface(0xDFFFFFFF,dp(11)));appIcon.setClipToOutline(true);
+            FrameLayout.LayoutParams ip=new FrameLayout.LayoutParams(dp(44),dp(44),Gravity.TOP|Gravity.LEFT);ip.setMargins(dp(16),dp(15),0,0);card.addView(appIcon,ip);
+        } catch(PackageManager.NameNotFoundException ignored) { }
         TextView edit=text("···",24,Color.WHITE,true); edit.setGravity(Gravity.CENTER); edit.setContentDescription(t("Profil dan koleksi ","Profile and collection ")+game.title);
         FrameLayout.LayoutParams ep=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.RIGHT); card.addView(edit,ep);
         edit.setOnClickListener(v->new AlertDialog.Builder(this).setTitle(game.title).setItems(new String[]{t("Atur profil","Edit profile"),t("Hapus dari koleksi","Remove from collection")},(d,which)->{
@@ -272,7 +300,7 @@ public final class MainActivity extends Activity {
         page.addView(text(subtitle,11,Glass.MUTED,false)); Glass.gap(page,11);
     }
     private void engine() {
-        titleRow(t("Performa, bukan janji.","Control, not empty promises."),t("Pengaturan jujur. Aktif pada sesi berikutnya.","Honest settings. Applied on your next session."),null,null);
+        titleRow(t("Profil performa","Performance profiles"),t("Pengaturan berlaku pada sesi berikutnya.","Settings apply on the next session."),null,null);
         String selected=store.p.getString("selected_game",GameSpec.ALL[0].id);
         if(GameSpec.find(selected)==null) selected=GameSpec.ALL[0].id;
         final String gameId=selected;
@@ -301,11 +329,11 @@ public final class MainActivity extends Activity {
         Glass.gap(page,14);
         LinearLayout focus=Glass.card(this);
         toggle(focus,t("Mode Fokus","Focus mode"),t("Senyapkan pesan/panggilan; alarm tetap diizinkan. Perlu izin Jangan Ganggu.","Silence calls/messages; allow alarms. Requires Do Not Disturb access."),"focus",true);
-        Glass.gap(focus,12); toggle(focus,t("Sidebar tarik","Pull-out sidebar"),t("Monitor hanya terlihat saat panel dibuka. Tahan/seret untuk pindah.","Metrics appear only when open. Hold/drag to reposition."),"overlay",true);
+        Glass.gap(focus,12); toggle(focus,t("Sidebar tarik","Pull-out sidebar"),t("Tarik untuk membuka. Tahan dan geser untuk memindah tepi.","Swipe to open. Hold and drag to another edge."),"overlay",true);
         page.addView(focus);
         section(t("Pengecualian aplikasi","App exclusions"),t("WhatsApp dilindungi secara default. Tidak ada force-stop otomatis di versi ini.","WhatsApp is protected by default. This version does not automatically force-stop apps."));
         page.addView(button(t("Atur daftar pengecualian","Manage exclusions"),false,this::exclusions));
-        section(t("Batas kemampuan versi ini","This version's capability limits"),t("Fitur yang belum diverifikasi tidak diberi tombol boost palsu.","Unverified features do not get fake boost switches."));
+        section(t("Batas kemampuan versi ini","This version's capability limits"),t("Fitur yang belum tervalidasi tetap dinonaktifkan.","Unverified features remain disabled."));
         LinearLayout limits=Glass.card(this);
         limits.addView(text(t("• Downscale render: belum diaktifkan sebelum validasi HiOS.\n• FPS/1% low: belum tersedia; tidak disimulasikan.\n• Driver GPU, EQ lintas aplikasi, dan tuning sentuh: tidak diklaim didukung.\n• Tidak ada debloat, kompilasi AOT otomatis, atau pemutusan internet aplikasi lain.\n• Proteksi suhu dan file game tidak disentuh.","• Render downscale: disabled pending HiOS validation.\n• FPS/1% low: unavailable; never simulated.\n• GPU drivers, global EQ and touch tuning: not claimed as supported.\n• No debloat, automatic AOT compilation or app network blocking.\n• Thermal protections and game files remain untouched."),12,Glass.MUTED,false)); page.addView(limits);
         Glass.gap(page,12); page.addView(button(t("Lihat hasil engine terakhir","View last engine results"),false,()->info("Engine",store.p.getString("last_engine_log",t("Belum ada sesi.","No session yet.")))));
@@ -339,7 +367,7 @@ public final class MainActivity extends Activity {
             }).setNegativeButton(t("Batal","Cancel"),null).show();
     }
     private void device() {
-        titleRow(t("Kenali perangkat lo.","Know your device."),android.os.Build.MANUFACTURER+" "+android.os.Build.MODEL+" · Android "+Build.VERSION.RELEASE,null,null);
+        titleRow(t("Perangkat & sesi","Device & sessions"),android.os.Build.MANUFACTURER+" "+android.os.Build.MODEL+" · Android "+Build.VERSION.RELEASE,null,null);
         LinearLayout permissions=Glass.card(this);
         String state=PrivilegeBridge.state();
         permission(permissions,"Shizuku",state.equals("ready")?t("Terhubung · izin diberikan","Connected · authorized"):state.equals("permission")?t("Terhubung · butuh izin","Connected · permission needed"):t("Belum terhubung","Not connected"),this::shizuku);

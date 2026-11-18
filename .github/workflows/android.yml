@@ -112,7 +112,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="preview-0.1.0-${GITHUB_SHA:0:7}"
+          VERSION=$(sed -n "s/.*versionName '\([^']*\)'.*/\1/p" app/build.gradle)
+          TAG="preview-${VERSION}-${GITHUB_SHA:0:7}"
           cp preview/app-debug.apk spaces-mobile-preview.apk
           sha256sum spaces-mobile-preview.apk > SHA256SUMS.txt
           gh release create "$TAG" spaces-mobile-preview.apk SHA256SUMS.txt --target "$GITHUB_SHA" --prerelease --title "spaces : mobile · Android 13 preview" --notes-file docs/RELEASE-NOTES.md

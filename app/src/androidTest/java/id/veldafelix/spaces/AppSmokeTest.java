@@ -40,7 +40,7 @@ public class AppSmokeTest {
     @Test public void startsLandscapeAndEmpty() {
         assertEquals(android.content.res.Configuration.ORIENTATION_LANDSCAPE,activity.getResources().getConfiguration().orientation);
         assertFalse(new Store(context).added("com.tencent.igfit"));
-        inst.runOnMainSync(()->assertNotNull(find(activity.getWindow().getDecorView(),"Ruangnya siap. Game-nya pilih dulu.")));
+        inst.runOnMainSync(()->assertNotNull(find(activity.getWindow().getDecorView(),"Tambahkan game untuk mulai")));
         screenshot("01-home");
     }
     @Test public void engineAndDeviceRenderWithoutPermissions() { click("Performa"); screenshot("02-engine"); click("Perangkat"); screenshot("03-device"); }
@@ -144,6 +144,27 @@ public class AppSmokeTest {
             context.unregisterReceiver(receiver); store.p.unregisterOnSharedPreferenceChangeListener(listener);
             context.startService(new Intent(context,id.veldafelix.spaces.engine.SessionService.class).setAction(id.veldafelix.spaces.engine.SessionService.STOP));
         }
+    }
+    private void tapNav(int index,boolean corner) {
+        int[] xy=new int[2];
+        inst.runOnMainSync(()->{
+            View nav=activity.getWindow().getDecorView().findViewWithTag("nav_"+index);assertNotNull(nav);
+            nav.getLocationOnScreen(xy);xy[0]+=corner?3:nav.getWidth()/2;xy[1]+=corner?3:nav.getHeight()-3;
+        });
+        long at=android.os.SystemClock.uptimeMillis();
+        android.view.MotionEvent down=android.view.MotionEvent.obtain(at,at,android.view.MotionEvent.ACTION_DOWN,xy[0],xy[1],0);
+        android.view.MotionEvent up=android.view.MotionEvent.obtain(at,at+40,android.view.MotionEvent.ACTION_UP,xy[0],xy[1],0);
+        inst.sendPointerSync(down);inst.sendPointerSync(up);down.recycle();up.recycle();inst.waitForIdleSync();
+    }
+    @Test public void navigationRespondsAtPaddingAndKeepsTheSameRail() {
+        View before=activity.getWindow().getDecorView().findViewWithTag("nav_1");
+        tapNav(1,true);
+        inst.runOnMainSync(()->{
+            assertNotNull(find(activity.getWindow().getDecorView(),"Profil performa"));
+            assertSame(before,activity.getWindow().getDecorView().findViewWithTag("nav_1"));
+        });
+        tapNav(2,false);inst.runOnMainSync(()->assertNotNull(find(activity.getWindow().getDecorView(),"Perangkat & sesi")));
+        tapNav(0,false);inst.runOnMainSync(()->assertNotNull(find(activity.getWindow().getDecorView(),"Koleksi game")));
     }
     private void screenshot(String name) {
         try {
