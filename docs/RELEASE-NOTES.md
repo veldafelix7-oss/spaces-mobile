@@ -1,4 +1,6 @@
-# spaces : mobile — 0.1.1 preview
+# spaces : mobile — 0.1.1 preview (unreleased)
+
+**Release blocked:** build/lint/42 JVM tests pass, but 2 of 22 Android input tests fail (actual collapse-arrow tap and top-edge swipe). The changes below describe implementation, not completed touch validation. Do not distribute a failed-run artifact as a tested revision.
 
 Follow-up to real Tecno Spark 20C feedback:
 - Thin edge-docked sidebar tab with chevron. Hold and drag to snap left/right/top; top tab becomes horizontal. Edge and normalized position survive rotation/restart; legacy positions migrate.

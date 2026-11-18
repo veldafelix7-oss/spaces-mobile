@@ -1,6 +1,17 @@
 # Verified results — 2026-11-18
 
-## Evidence
+## Current 0.1.1 revision — release blocked
+
+- Tested source: `b87d82d`; [failed run 44351081183](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44351081183).
+- APK/test APK compilation, lint and **42 JVM tests passed**.
+- **22 Android 13 instrumentation tests ran; 20 passed, 2 failed**. Actual OS touch streams use asynchronous UiAutomation injection, not direct view dispatch. Earlier shell injection reproduced the same failures.
+- Passing input paths include initial right-handle tap, right inward swipe, and held drag snapping to top. Programmatic arrow clicks also pass, but this is not equivalent to real touch input.
+- Still failing: actual touch on the panel collapse arrow; downward swipe after snapping to top. The latter produces a visible `NotificationShade` input window in diagnostics; no claim that Android's mandatory system gesture can be bypassed. Earlier top-tap checks also failed. The collapse root cause is not established.
+- Deferred handle click now replaces windows after ACTION_UP. Closed tabs are detached, not left as invisible overlay windows. Named input-window/gesture diagnostics are retained. Display-context/max-display geometry changes have **not** eliminated these two failures.
+- Separate `.preview2` installation preserves the old `.preview` sandbox marker in CI. This is not migration or same-key update verification. Permanent production signing remains unconfigured.
+- **No 0.1.1 release published.** No new phone measurements, visual review, Focus validation or performance gains claimed.
+
+## Released 0.1.0 evidence
 - Tested source: `b7891f807f59c1ee1b0948c1f43b31c93b99e58b`.
 - [Successful GitHub Actions run](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44325479133).
 - [Published pre-release APK](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.0-b7891f8).

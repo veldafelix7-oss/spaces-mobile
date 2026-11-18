@@ -6,9 +6,15 @@ Native Android game space for **Tecno Spark 20C (BG7), Android 13 / HiOS 13**, d
 
 [Download the Android 13 preview APK (~2.5 MB)](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.0-b7891f8/spaces-mobile-preview.apk) · [Release + checksum](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.0-b7891f8)
 
-**30 JVM tests + 13 Android 13 emulator tests passed; APK compilation and lint passed.** See [actual test results and unverified areas](docs/TEST-RESULTS.md). No Tecno/game performance gains have been measured yet.
+**The linked 0.1.0 APK passed 30 JVM tests + 13 Android 13 emulator tests; APK compilation and lint passed.** See [actual test results and unverified areas](docs/TEST-RESULTS.md). No Tecno/game performance gains have been measured yet.
 
-## Status: 0.1.0 preview, not a proven performance booster
+### 0.1.1 revision — NOT RELEASED
+
+The UI/sidebar revision builds and passes lint and **42 JVM tests**, but its expanded Android 13 suite still has **2 failures out of 22 tests**: actual collapse-arrow touch and top-edge swipe opening. Top-edge diagnostics show Android's notification shade receiving the gesture; the collapse failure remains unresolved. Do not treat successful direct `performClick()` tests as proof that real touches work. [Latest checked run](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44351081183).
+
+The revision uses isolated ID `id.veldafelix.spaces.preview2` and label `spaces : mobile · 0.1.1` because the original preview signing key could not be recovered. This is **not an in-place update or a signing solution**: old app/data stay separate; collection and permissions would need configuring again. Do not uninstall the old app or clear its data. End/recover its sessions before using another install. No revised APK has been released.
+
+## Released status: 0.1.0 preview, not a proven performance booster
 
 The app is functional groundwork with honest capability boundaries. A command's successful readback is **not** proof of a higher FPS. Testing on the actual BG7 is necessary; emulator results cannot certify HiOS or game compatibility.
 
@@ -29,7 +35,7 @@ Render downscale (especially HiOS Android 13), SurfaceFlinger FPS capture, proce
 
 ## Build and install (phone-only friendly)
 
-GitHub Actions → **Android checks & preview APK** → successful run → artifact **spaces-mobile-preview**. Extract the ZIP and install `app-debug.apk` on the phone. Android will request permission for the browser/file manager to install unknown apps. Preview application ID is `id.veldafelix.spaces.preview`.
+GitHub Actions → **Android checks & preview APK** → successful run → artifact **spaces-mobile-preview**. Extract the ZIP and install `app-debug.apk` on the phone. Android will request permission for the browser/file manager to install unknown apps. The published 0.1.0 preview application ID is `id.veldafelix.spaces.preview`; unreleased 0.1.1 source uses `.preview2`. Do not install build artifacts from a run whose emulator checks failed.
 
 The CI preview debug signing key is reused through Actions cache when available (cache eviction can still change it). For reliable updates it can be fixed using repository secret `PREVIEW_KEYSTORE_BASE64` (standard Android debug credentials). Without the secret, a cache miss generates a new debug key; later APKs may not install as updates. Never uninstall to work around this without understanding local data will be lost. A signed release uses a **separate**, private key and application ID.
 
