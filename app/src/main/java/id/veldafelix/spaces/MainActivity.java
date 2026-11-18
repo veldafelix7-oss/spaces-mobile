@@ -27,6 +27,7 @@ public final class MainActivity extends Activity {
     private LinearLayout page;
     private int tab=0;
     private boolean registered=false,launching=false,resumed=false;
+    private String pendingLaunch;
     private final Handler main=new Handler(Looper.getMainLooper());
     private final BroadcastReceiver sessionReady=new BroadcastReceiver() {
         @Override public void onReceive(Context c,Intent intent) {
@@ -49,7 +50,7 @@ public final class MainActivity extends Activity {
         Shizuku.addBinderReceivedListenerSticky(binderReceived);
         Shizuku.addBinderDeadListener(binderDead);
         IntentFilter f=new IntentFilter(SessionService.READY);
-        if(Build.VERSION.SDK_INT>=33) registerReceiver(sessionReady,f,Context.RECEIVER_NOT_EXPORTED); else registerReceiver(sessionReady,f);
+        registerReceiver(sessionReady,f,Context.RECEIVER_NOT_EXPORTED);
         registered=true;
         render();
     }
@@ -214,13 +215,23 @@ public final class MainActivity extends Activity {
                 .setPositiveButton(t("Setuju & mulai","Agree & start"),(d,w)->{ store.p.edit().putBoolean("session_consent",true).apply(); startSession(game); })
                 .setNegativeButton(t("Batal","Cancel"),null).show(); return;
         }
-        if(Build.VERSION.SDK_INT>=33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)
-            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},31);
+        if(Build.VERSION.SDK_INT>=33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED
+                && !store.p.getBoolean("notification_prompted",false)) {
+            pendingLaunch=game.id; store.p.edit().putBoolean("notification_prompted",true).apply();
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},31); return;
+        }
         launching=true;
         try { startForegroundService(new Intent(this,SessionService.class).setAction(SessionService.START).putExtra("game",game.id)); }
         catch(Exception e) { launching=false; toast(t("Tidak bisa memulai sesi: ","Unable to start session: ")+e.getClass().getSimpleName()); }
         main.postDelayed(()->{ launching=false; if(resumed) render(); },20000);
         render();
+    }
+    @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] results) {
+        super.onRequestPermissionsResult(requestCode,permissions,results);
+        if(requestCode==31 && pendingLaunch!=null) {
+            GameSpec game=GameSpec.find(pendingLaunch); pendingLaunch=null;
+            if(game!=null) main.post(()->startSession(game));
+        } else render();
     }
     private void launchGame(String id) {
         if(GameSpec.find(id)==null) return;

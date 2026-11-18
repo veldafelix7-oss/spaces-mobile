@@ -52,7 +52,12 @@ public final class Engine {
             try {
                 NotificationManager n=c.getSystemService(NotificationManager.class);
                 if(!n.isNotificationPolicyAccessGranted()) return "ERR:permission";
-                n.setInterruptionFilter(Integer.parseInt(value)); return "";
+                int filter=Integer.parseInt(value); n.setInterruptionFilter(filter);
+                long deadline=android.os.SystemClock.elapsedRealtime()+1000;
+                while(n.getCurrentInterruptionFilter()!=filter && android.os.SystemClock.elapsedRealtime()<deadline) {
+                    Thread.sleep(25);
+                }
+                return n.getCurrentInterruptionFilter()==filter?"":"ERR:DND readback timeout";
             } catch(Exception e) { return "ERR:"+e.getClass().getSimpleName(); }
         }
         return PrivilegeBridge.exec(c,kind.equals("refresh")?ShellPolicy.WRITE_SETTING:ShellPolicy.GAME_SET,key,value);

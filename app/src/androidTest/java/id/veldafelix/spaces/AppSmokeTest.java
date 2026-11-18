@@ -110,6 +110,35 @@ public class AppSmokeTest {
             e.restore(); assertFalse(e.pending());
         } finally { shell("cmd notification allow_dnd "+context.getPackageName()); n.setInterruptionFilter(old); shell("cmd notification disallow_dnd "+context.getPackageName()); }
     }
+    @Test public void foregroundSessionStartsOnceAndEndsWithHistory() throws Exception {
+        Store store=new Store(context);
+        store.add("com.tencent.igfit",true);
+        store.p.edit().putBoolean("focus",false).putBoolean("overlay",false).commit();
+        java.util.concurrent.CountDownLatch ready=new java.util.concurrent.CountDownLatch(1);
+        android.content.BroadcastReceiver receiver=new android.content.BroadcastReceiver() {
+            public void onReceive(Context c,Intent i) { ready.countDown(); }
+        };
+        context.registerReceiver(receiver,new android.content.IntentFilter(id.veldafelix.spaces.engine.SessionService.READY),Context.RECEIVER_NOT_EXPORTED);
+        java.util.concurrent.CountDownLatch ended=new java.util.concurrent.CountDownLatch(1);
+        android.content.SharedPreferences.OnSharedPreferenceChangeListener listener=(p,key)->{
+            if(key.equals("active") && !p.getBoolean("active",false)) ended.countDown();
+        };
+        store.p.registerOnSharedPreferenceChangeListener(listener);
+        try {
+            Intent start=new Intent(context,id.veldafelix.spaces.engine.SessionService.class).setAction(id.veldafelix.spaces.engine.SessionService.START).putExtra("game","com.tencent.igfit");
+            context.startForegroundService(start);
+            assertTrue("Session should become ready",ready.await(15,java.util.concurrent.TimeUnit.SECONDS));
+            assertTrue(store.p.getBoolean("active",false));
+            context.startForegroundService(start); // Duplicate must not create another session.
+            context.startService(new Intent(context,id.veldafelix.spaces.engine.SessionService.class).setAction(id.veldafelix.spaces.engine.SessionService.STOP));
+            assertTrue("Session should stop",ended.await(15,java.util.concurrent.TimeUnit.SECONDS));
+            inst.waitForIdleSync(); assertFalse(store.p.getBoolean("active",true));
+            assertEquals(1,store.history().length()); assertFalse(new Engine(context).pending());
+        } finally {
+            context.unregisterReceiver(receiver); store.p.unregisterOnSharedPreferenceChangeListener(listener);
+            context.startService(new Intent(context,id.veldafelix.spaces.engine.SessionService.class).setAction(id.veldafelix.spaces.engine.SessionService.STOP));
+        }
+    }
     private void screenshot(String name) {
         try {
             Bitmap bitmap=inst.getUiAutomation().takeScreenshot();

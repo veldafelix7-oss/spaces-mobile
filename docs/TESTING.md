@@ -3,7 +3,7 @@
 ## Automated (CI)
 - JVM: command allowlist, injection rejection, bounds, package restrictions, mode parsing, launch/exit grace, compare-before-restore.
 - Android lint and debug compilation; instrumentation APK compilation.
-- Android 13 emulator: landscape empty collection, Engine/Device rendering without permissions, language switching, rejected unsupported app, profile persistence, real Android telemetry access, empty recovery. Screenshots and AndroidRuntime log saved as artifacts.
+- Android 13 emulator: landscape empty collection, Engine/Device rendering without permissions, language switching, rejected unsupported app, profile persistence, real Android telemetry access, empty/corrupt recovery, real emulator DND apply/restore/external-change/revocation, and foreground session start/duplicate/end/history (without a real game). Screenshots and AndroidRuntime log saved as artifacts.
 
 CI success certifies only those paths. It does NOT certify Shizuku, HiOS, thermal/FPS improvements, DND handling of WhatsApp calls or actual game sessions.
 
