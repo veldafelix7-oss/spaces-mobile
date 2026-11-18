@@ -91,6 +91,11 @@ public class OverlayTest {
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(frame::countDown,1000);
         try { assertTrue("Overlay UI frame timed out",frame.await(4,java.util.concurrent.TimeUnit.SECONDS)); }
         catch(InterruptedException e) { Thread.currentThread().interrupt();throw new AssertionError(e); }
+        // A Handler latch only observes the UI thread, not the emulator compositor's
+        // input-window transaction. Screen capture is a public UiAutomation barrier
+        // for the rendered state; never retry a missed tap or dispatch directly to a View.
+        android.graphics.Bitmap rendered=inst.getUiAutomation().takeScreenshot();
+        assertNotNull("Compositor screenshot unavailable",rendered);rendered.recycle();
     }
     private void inputWindows() {
         try(ParcelFileDescriptor fd=inst.getUiAutomation().executeShellCommand("dumpsys input");
