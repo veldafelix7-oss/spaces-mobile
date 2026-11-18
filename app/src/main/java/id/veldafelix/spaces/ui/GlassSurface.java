@@ -28,7 +28,7 @@ public final class GlassSurface extends Drawable {
         p.setStyle(Paint.Style.FILL);
     }
     @Override public void getOutline(Outline outline) { outline.setRoundRect(getBounds(),radius); }
-    @Override public void setAlpha(int alpha) { opacity=alpha;invalidateSelf(); }
-    @Override public void setColorFilter(ColorFilter filter) { p.setColorFilter(filter);invalidateSelf(); }
+    @Override public void setAlpha(int alpha) { if(opacity!=alpha) { opacity=alpha;invalidateSelf(); } }
+    @Override public void setColorFilter(ColorFilter filter) { if(p.getColorFilter()!=filter) { p.setColorFilter(filter);invalidateSelf(); } }
     @Override public int getOpacity() { return PixelFormat.TRANSLUCENT; }
 }

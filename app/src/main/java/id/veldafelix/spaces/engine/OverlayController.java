@@ -31,7 +31,7 @@ public final class OverlayController {
     private TextView temperature,ram,battery,networkResult;
     private JSONObject sample=new JSONObject();
     private final Handler main=new Handler(Looper.getMainLooper());
-    private boolean hidden=false,testing=false;
+    private boolean hidden=false,testing=false,handleAttached=false;
     private static final int MOVE_LEFT=0x01010001,MOVE_RIGHT=0x01010002,MOVE_TOP=0x01010003;
     public OverlayController(Context c,Runnable end) { this.c=c;this.end=end;store=new Store(c);wm=c.getSystemService(WindowManager.class); }
     private int dp(float n) { return Glass.dp(c,n); }
@@ -99,10 +99,10 @@ public final class OverlayController {
                 }
             }
         });
-        try { wm.addView(handle,hp);saveDock(); } catch(Exception ignored) { handle=null; }
+        try { wm.addView(handle,hp);handleAttached=true;saveDock(); } catch(Exception ignored) { handle=null; }
     }
     private void saveDock() { store.p.edit().putString("dock_edge",dock.edge).putFloat("dock_offset",dock.fraction).remove("handle_x").remove("handle_y").apply(); }
-    private void updateHandle() { if(handle!=null) try { wm.updateViewLayout(handle,hp); } catch(Exception ignored) { } }
+    private void updateHandle() { if(handle!=null && handleAttached) try { wm.updateViewLayout(handle,hp); } catch(Exception ignored) { } }
     private void applyDock(EdgeDock.Placement p,boolean save) {
         dock=p;hp.x=p.x;hp.y=p.y;hp.width=p.width;hp.height=p.height;
         if(handle!=null) handle.direction(p.edge,false);updateHandle();if(save) saveDock();
@@ -163,7 +163,12 @@ public final class OverlayController {
         frame.addView(collapse,cp);
         WindowManager.LayoutParams p=params(pw,ph);p.x=top?Math.max(0,Math.min(width()-pw,dock.x+dock.width/2-pw/2)):left?0:width()-pw;p.y=0;
         panel=frame;
-        try { wm.addView(panel,p);handle.setVisibility(View.INVISIBLE); } catch(Exception ignored) { panel=null;clearMetrics(); }
+        try {
+            wm.addView(panel,p);
+            // Detach the tab window instead of leaving an invisible overlay that may retain
+            // an input/obscuring region on OEM window managers.
+            if(handleAttached) { wm.removeViewImmediate(handle);handleAttached=false; }
+        } catch(Exception ignored) { if(panel!=null) try { wm.removeViewImmediate(panel); } catch(Exception ignoredAgain) { } panel=null;clearMetrics(); }
     }
     private void testNetwork() {
         if(testing || networkResult==null) return;testing=true;
@@ -178,10 +183,10 @@ public final class OverlayController {
     private void clearMetrics() { temperature=null;ram=null;battery=null;networkResult=null; }
     void close() {
         if(panel!=null) try { wm.removeView(panel); } catch(Exception ignored) { } finally { panel=null;clearMetrics(); }
-        if(handle!=null && !hidden) handle.setVisibility(View.VISIBLE);
+        if(handle!=null && !hidden && !handleAttached) try { wm.addView(handle,hp);handleAttached=true; } catch(Exception ignored) { }
     }
     public void hide() {
         hidden=true;close();main.removeCallbacksAndMessages(null);
-        if(handle!=null) try { wm.removeView(handle); } catch(Exception ignored) { } finally { handle=null; }
+        if(handle!=null) try { if(handleAttached) wm.removeViewImmediate(handle); } catch(Exception ignored) { } finally { handle=null;handleAttached=false; }
     }
 }

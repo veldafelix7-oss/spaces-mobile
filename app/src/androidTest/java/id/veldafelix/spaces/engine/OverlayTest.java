@@ -51,7 +51,7 @@ public class OverlayTest {
         return null;
     }
     @Test public void edgeArrowClosesWithoutScrollingAndRestoresHandle() {
-        inst.runOnMainSync(()->{controller.handleView().performClick();assertTrue(controller.isOpen());assertEquals(View.INVISIBLE,controller.handleView().getVisibility());
+        inst.runOnMainSync(()->{controller.handleView().performClick();assertTrue(controller.isOpen());assertFalse(controller.handleView().isAttachedToWindow());
             View arrow=collapse(controller.panelView());assertNotNull(arrow);assertTrue(arrow.isShown());arrow.performClick();assertFalse(controller.isOpen());assertEquals(View.VISIBLE,controller.handleView().getVisibility());});
     }
     @Test public void leftAndTopPanelsAlsoCloseFromTheirEdge() {
