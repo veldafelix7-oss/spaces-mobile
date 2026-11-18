@@ -34,7 +34,7 @@ jobs:
           fi
       - name: Compile, unit tests, lint and instrumentation APK
         run: python3 scripts/ci-build.py testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
-      - name: Verify compatibility with installed preview signing identity
+      - name: Verify preview signing and isolated preview identity
         env:
           GH_TOKEN: ${{ github.token }}
         run: bash scripts/check-preview-signing.sh
@@ -74,7 +74,7 @@ jobs:
         with:
           name: instrumentation-apks
           path: apks
-      - name: Download previous preview for update test
+      - name: Download previous preview for side-by-side preservation test
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release download preview-0.1.0-b7891f8 --pattern spaces-mobile-preview.apk --dir previous
@@ -96,12 +96,14 @@ jobs:
             adb shell am force-stop id.veldafelix.spaces.preview
             adb shell run-as id.veldafelix.spaces.preview mkdir -p files
             adb shell "run-as id.veldafelix.spaces.preview sh -c 'echo retained > files/update-check.txt'"
-            adb install -r apks/debug/app-debug.apk
+            adb install apks/debug/app-debug.apk
             adb shell run-as id.veldafelix.spaces.preview cat files/update-check.txt | tee emulator-results/update-data.txt
             grep -qx retained emulator-results/update-data.txt
+            adb shell pm path id.veldafelix.spaces.preview | grep -q package:
+            adb shell pm path id.veldafelix.spaces.preview2 | grep -q package:
             adb install apks/androidTest/debug/app-debug-androidTest.apk
-            adb shell am instrument -w id.veldafelix.spaces.preview.test/androidx.test.runner.AndroidJUnitRunner | tee emulator-results/instrumentation.txt
-            adb pull /sdcard/Android/data/id.veldafelix.spaces.preview/files/screenshots emulator-results/ || true
+            adb shell am instrument -w id.veldafelix.spaces.preview2.test/androidx.test.runner.AndroidJUnitRunner | tee emulator-results/instrumentation.txt
+            adb pull /sdcard/Android/data/id.veldafelix.spaces.preview2/files/screenshots emulator-results/ || true
             adb logcat -d -s AndroidRuntime > emulator-results/crashes.txt
             python3 scripts/check-instrumentation.py
       - uses: actions/upload-artifact@v4

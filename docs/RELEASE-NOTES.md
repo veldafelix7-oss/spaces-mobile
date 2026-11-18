@@ -8,6 +8,7 @@ Follow-up to real Tecno Spark 20C feedback:
 - Original installed-game icons shown on game cards; no bundled or downloaded game artwork.
 - Neutral concise Indonesian copy, explicit Shizuku connection/permission label instead of ambiguous Standard mode.
 - Edge-to-edge app backdrop with cutout-safe navigation controls; the app does not change the games' own camera/cutout policies.
-- Version code incremented for in-place preview updates when the signing identity matches. End active sessions before updating. Do not uninstall/clear app data if Android rejects the signing key.
+- **Installation change:** 0.1.0's preview signing identity could not be recovered from CI. This build uses a separate preview application ID (`id.veldafelix.spaces.preview2`) and launcher label `spaces : mobile · 0.1.1`. It installs alongside the old preview, not over it. Old local data is not deleted or automatically migrated. End/recover all old sessions before starting one in the new app. Collection and permissions must be configured again in the new app.
+- Same-key in-place production updates remain blocked until private signing secrets are configured. CI verifies both APK signatures and the isolated preview ID; emulator checks old private data survives side-by-side installation.
 
 Unchanged safety limits: no FPS-unlock, verified FPS capture, render downscale, automatic process stopping, global EQ or touch-driver control. No game-file/memory modification or thermal bypass. HiOS gestures and hardware performance still require real-device testing. Slightly smoother play reported by the user is subjective, not a measured FPS gain.

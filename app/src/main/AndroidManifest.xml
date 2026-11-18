@@ -14,7 +14,7 @@
         <package android:name="moe.shizuku.privileged.api" />
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent>
     </queries>
-    <application android:theme="@style/AppTheme" android:label="spaces : mobile"
+    <application android:theme="@style/AppTheme" android:label="@string/app_name"
         android:icon="@drawable/ic_lion" android:roundIcon="@drawable/ic_lion"
         android:allowBackup="false" android:supportsRtl="true" android:usesCleartextTraffic="false">
         <meta-data android:name="moe.shizuku.client.V3_SUPPORT" android:value="true" />
