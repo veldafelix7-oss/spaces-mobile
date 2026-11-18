@@ -85,11 +85,13 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       - uses: reactivecircus/android-emulator-runner@v2
         with:
+          emulator-boot-timeout: 180
           api-level: 33
           arch: x86_64
           profile: pixel_2
           disable-animations: true
           script: |
+            echo "::notice title=Emulator stage::Boot completed; checking isolated installation"
             mkdir -p emulator-results
             adb install previous/spaces-mobile-preview.apk
             adb shell am start -W -n id.veldafelix.spaces.preview/id.veldafelix.spaces.MainActivity
@@ -102,9 +104,11 @@ jobs:
             adb shell pm path id.veldafelix.spaces.preview | grep -q package:
             adb shell pm path id.veldafelix.spaces.preview2 | grep -q package:
             adb install apks/androidTest/debug/app-debug-androidTest.apk
+            echo "::notice title=Emulator stage::Installation preserved old data; running instrumentation"
             timeout 180s adb shell am instrument -w -r id.veldafelix.spaces.preview2.test/androidx.test.runner.AndroidJUnitRunner | tee emulator-results/instrumentation.txt
-            adb pull /sdcard/Android/data/id.veldafelix.spaces.preview2/files/screenshots emulator-results/ || true
-            adb logcat -d -s AndroidRuntime > emulator-results/crashes.txt
+            echo "::notice title=Emulator stage::Instrumentation command finished; collecting results"
+            timeout 15s adb pull /sdcard/Android/data/id.veldafelix.spaces.preview2/files/screenshots emulator-results/ || true
+            timeout 10s adb logcat -d -s AndroidRuntime > emulator-results/crashes.txt
             python3 scripts/check-instrumentation.py
       - uses: actions/upload-artifact@v4
         if: always()

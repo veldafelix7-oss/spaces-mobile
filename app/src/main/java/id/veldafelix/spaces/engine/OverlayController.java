@@ -33,7 +33,12 @@ public final class OverlayController {
     private final Handler main=new Handler(Looper.getMainLooper());
     private boolean hidden=false,testing=false,handleAttached=false;
     private static final int MOVE_LEFT=0x01010001,MOVE_RIGHT=0x01010002,MOVE_TOP=0x01010003;
-    public OverlayController(Context c,Runnable end) { this.c=c;this.end=end;store=new Store(c);wm=c.getSystemService(WindowManager.class); }
+    public OverlayController(Context context,Runnable end) {
+        Context app=context.getApplicationContext();
+        Display display=app.getSystemService(android.hardware.display.DisplayManager.class).getDisplay(Display.DEFAULT_DISPLAY);
+        this.c=app.createWindowContext(display,WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,null);
+        this.end=end;store=new Store(app);wm=this.c.getSystemService(WindowManager.class);
+    }
     private int dp(float n) { return Glass.dp(c,n); }
     private Rect bounds() { return wm.getCurrentWindowMetrics().getBounds(); }
     private int width() { return Math.max(1,bounds().width()); }
