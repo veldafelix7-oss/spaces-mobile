@@ -3,6 +3,9 @@
 ## Automated (CI)
 - JVM: command allowlist, injection rejection, bounds, package restrictions, mode parsing, launch/exit grace, compare-before-restore.
 - Android lint and debug compilation; instrumentation APK compilation.
+- Two consecutive complete instrumentation suites per emulator job, fail-closed with no retry after a failure. Only draft candidates are created automatically; publication requires manual review.
+- Overlay setup acknowledges Android's first-use fullscreen tutorial before creating the overlay. It then checks stable activity focus, and the open panel's input focus. Actual first open/collapse, held drag, all-dock repeated glyph cycles, media touch and Back remain OS-input assertions. No system settings are used to disable the tutorial and no missed app tap is retried.
+- Verified source `82e5e54`: two independent emulator runs each passed 45 JVM tests and both 25-test Android suites. See [results](TEST-RESULTS.md) for exact runs and earlier failed candidates.
 - Android 13 emulator: landscape empty collection, Engine/Device rendering without permissions, language switching, rejected unsupported app, profile persistence, real Android telemetry access, empty/corrupt recovery, real emulator DND apply/restore/external-change/revocation, and foreground session start/duplicate/end/history (without a real game). Screenshots and AndroidRuntime log saved as artifacts.
 
 CI success certifies only those paths. It does NOT certify Shizuku, HiOS, thermal/FPS improvements, DND handling of WhatsApp calls or actual game sessions.
@@ -41,6 +44,7 @@ For every row record pass/fail, actual result, app version and date. Never recor
 - [ ] No game file/config/memory mutations; no thermal changes.
 
 ### Focus and overlay
+- [ ] If Android shows its first-use fullscreen tutorial, acknowledge it. Then check first open/close touches; do not count a consumed tutorial-dismissal touch as an app interaction. Also test clean-install onboarding explicitly.
 - [ ] Calls/messages silent, alarms permitted, original DND returns. Check normal calls and WA separately.
 - [ ] WA continues receiving messages; there is no WA shortcut/recorder.
 - [ ] Tap/swipe open, drag handle left/right/top, reopen panel after rotation, close restores touch access to game.

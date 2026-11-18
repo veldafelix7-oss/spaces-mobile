@@ -1,12 +1,37 @@
 # Verified results — 2026-11-18
 
-## 0.1.1 candidate — ON HOLD after repeat failure
+## Current 0.1.1 preview — repeated emulator validation passed
+
+- Source: `82e5e54f65d60efbe06f171a458ed11049b7b3cd`.
+- [44376931976](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44376931976): compilation, lint, **45 JVM tests**, **25/25 + 25/25 Android tests**; draft prepared.
+- Independent fresh-emulator [44378340735](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44378340735): compilation, lint, **45 JVM tests**, **25/25 + 25/25 Android tests**. No retries after failure; all four complete suites passed.
+- The gate has now actually run on the emulator, not just mocked. Publication remains a manual action after review; future CI runs create drafts only.
+- APK: **2,552,137 bytes**; release `preview-0.1.1-82e5e54`. GitHub asset digest: `59a529d27c944ada6aacc59f5fd33e0a7a263709eb24c703b172f6fa08b58da3`. Asset digest/metadata were verified via GitHub API; no local download/reinstall is claimed.
+
+### What the investigation established
+
+The earlier isolated green run was correctly rejected after an independent failure. UI-thread-only state reads did **not** fix it ([44372715979](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44372715979)). Explicit focus-readiness checks then exposed that a visible panel sometimes never acquired input focus ([44373827241](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44373827241)).
+
+Bounded `dumpsys input` and `dumpsys window windows` diagnostics in [44375894754](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44375894754) showed:
+
+```text
+FocusedWindows: displayId=0, name='2adeec4 ImmersiveModeConfirmation'
+spaces-panel: isReadyForDisplay()=true, mDrawState=HAS_DRAWN, isVisible=true
+```
+
+Android's first-use immersive fullscreen tutorial was above the correctly laid-out panel, held focus, and could consume a subsequent touch. This establishes the cause of the captured failure, not proof that every historical failure had the same cause.
+
+The test setup now acknowledges the framework `android:id/ok` button in the Android-owned window **before creating the overlay**, then waits for stable activity focus. It does not change secure settings, suppress system windows, retry panel taps, call app `performClick()` in OS-input tests, or accept a second touch as success. The original first-open/first-collapse assertions remain; the later diagnostic second tap was removed. Controller state is read on its owning UI thread; the open panel must acquire input focus before the next OS interaction. Failure diagnostics are retained as bounded annotations, and teardown tolerates partial setup failure.
+
+This is test-environment preparation for a real system dialog, not a runtime ability to bypass it. On a phone, acknowledge Android's fullscreen instruction when shown before testing the panel. The new preview is suitable for **device testing**, not a claim of universal touch reliability. Tecno/HiOS game focus, incoming-call Focus behavior, thermal/battery/FPS effects, and permanent production signing remain unverified/unresolved. The old failed `preview-0.1.1-b6bcdd7` stays draft and must not be confused with this preview.
+
+## Earlier 0.1.1 candidate — withdrawn after repeat failure
 
 **Do not read the successful single run below as stable validation.** The independent repeat [44367972091](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44367972091), source `ffeb50c` (documentation-only changes after `b6bcdd7`), passed build/lint/45 JVM tests but **failed 1 of 25 Android tests**: `actualWindowTapsOpenAndCollapsePanel`. The first collapse tap produced no overlay event; a later diagnostic tap closed it. The test correctly retained the original failure. InputDispatcher warning log was empty. Six repeated glyph cycles, media and Back tests passed, so those alone are insufficient to certify the first-tap path.
 
-The automatically published candidate was returned to **draft** after this result; no revised APK is being recommended to the user. Root cause remains unestablished. Top-safe-band opening is passing, but gesture stability as a whole is not proven. Temporary focus, chevron alignment, frame-boundary updates, display stabilization and screenshot waits must not be described as a definitive collapse fix.
+The automatically published candidate was returned to **draft** after this result; no revised APK is being recommended to the user. At that point root cause remained unestablished; see the later captured system-window evidence above. Top-safe-band opening is passing, but gesture stability as a whole is not proven. Temporary focus, chevron alignment, frame-boundary updates, display stabilization and screenshot waits must not be described as a definitive collapse fix.
 
-CI policy has now been tightened: two consecutive suites must pass (no retry after a failed suite), and a successful build only prepares a **draft**. Manual review is required before publication. The new gate script is locally tested with mocked adb success/failure/timeout cases; its two-pass path has not yet been exercised on an actual emulator.
+CI policy has now been tightened: two consecutive suites must pass (no retry after a failed suite), and a successful build only prepares a **draft**. Manual review is required before publication. The gate script was initially locally tested with mocked adb success/failure/timeout cases; subsequent actual two-pass results are recorded above.
 
 ### Historical single-run 0.1.1 evidence (superseded for release readiness)
 

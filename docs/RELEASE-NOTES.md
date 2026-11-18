@@ -1,6 +1,8 @@
-# spaces : mobile — 0.1.1 candidate (DRAFT — validation hold)
+# spaces : mobile — 0.1.1 device-testing preview
 
-**Do not distribute as a validated revision.** Build/lint/45 JVM tests pass. One 25-test Android run passed, but the independent repeat failed the first collapse-arrow touch (24/25). The release was returned to draft. Top-edge reserved-band handling and repeated glyph cycles have passed; this does not resolve the intermittent first-tap failure. [Failed repeat](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44367972091). HiOS/game performance remains unverified.
+Source `82e5e54`: build/lint/45 JVM tests and **four 25/25 Android suites**, two consecutive suites on each of two independent emulator runs. [First run](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44376931976) · [Independent repeat](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44378340735).
+
+Earlier candidates were withheld after first-touch failures. Window-manager diagnostics captured Android's fullscreen onboarding dialog taking focus above the visible panel. Test setup now acknowledges that system dialog before overlay creation; no panel tap is retried or bypassed. If the phone shows Android's fullscreen tutorial, acknowledge it first. This does not let the app bypass system dialogs. HiOS/game touch/focus and hardware performance still need device testing. [Full evidence, including failures](TEST-RESULTS.md).
 
 Follow-up to real Tecno Spark 20C feedback:
 - Thin edge-docked sidebar tab with chevron. Hold and drag to snap left/right/top; top tab becomes horizontal. Edge and normalized position survive rotation/restart; legacy positions migrate.
