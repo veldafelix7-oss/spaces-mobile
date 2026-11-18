@@ -206,4 +206,11 @@ public class OverlayTest {
         } finally { audio.setStreamVolume(stream,old,0); }
     }
 
+    @Test public void backClosesInteractivePanelAndReturnsFocus() throws Exception {
+        EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);
+        inst.runOnMainSync(()->assertTrue(controller.isOpen()));
+        shell("input keyevent 4");
+        settle();inst.runOnMainSync(()->assertFalse(controller.isOpen()));awaitActivityFocus();
+    }
+
 }

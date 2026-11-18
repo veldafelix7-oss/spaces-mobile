@@ -225,7 +225,7 @@ public final class OverlayController {
         networkResult=Glass.text(c,store.t("TCP ke 1.1.1.1 · bukan ping pertandingan","TCP to 1.1.1.1 · not in-match ping"),9,Glass.MUTED,false);content.addView(networkResult);Glass.gap(content,9);
         content.addView(Glass.button(c,store.t("Akhiri sesi & pulihkan","End session & restore"),true,()->{close();end.run();}));
         DockHandle collapse=new DockHandle(c);collapse.direction(edge,true);collapse.setContentDescription(store.t("Tutup panel sesi","Collapse session panel"));collapse.setOnClickListener(v->close());
-        FrameLayout.LayoutParams cp=new FrameLayout.LayoutParams(top?dp(52):dp(24),top?dp(24):dp(52),top?Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL:(left?Gravity.RIGHT:Gravity.LEFT)|Gravity.CENTER_VERTICAL);
+        FrameLayout.LayoutParams cp=new FrameLayout.LayoutParams(top?dp(52):dp(12),top?dp(12):dp(52),top?Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL:(left?Gravity.RIGHT:Gravity.LEFT)|Gravity.CENTER_VERTICAL);
         // For the collapse strip, render the glass on the panel's inner edge.
         collapse.direction(top?EdgeDock.TOP:left?EdgeDock.RIGHT:EdgeDock.LEFT,top);
         // Keep the narrow chevron inside its own panel, away from the window boundary.
