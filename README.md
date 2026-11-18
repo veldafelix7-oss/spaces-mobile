@@ -25,7 +25,7 @@ Render downscale (especially HiOS Android 13), SurfaceFlinger FPS capture, proce
 
 GitHub Actions → **Android checks & preview APK** → successful run → artifact **spaces-mobile-preview**. Extract the ZIP and install `app-debug.apk` on the phone. Android will request permission for the browser/file manager to install unknown apps. Preview application ID is `id.veldafelix.spaces.preview`.
 
-The CI preview signing key can be kept stable using repository secret `PREVIEW_KEYSTORE_BASE64` (standard Android debug credentials). Without it, runners generate different debug keys; later APKs may not install as updates. Never uninstall to work around this without understanding local data will be lost. A signed release uses a **separate**, private key and application ID.
+The CI preview debug signing key is reused through Actions cache when available (cache eviction can still change it). For reliable updates it can be fixed using repository secret `PREVIEW_KEYSTORE_BASE64` (standard Android debug credentials). Without the secret, a cache miss generates a new debug key; later APKs may not install as updates. Never uninstall to work around this without understanding local data will be lost. A signed release uses a **separate**, private key and application ID.
 
 ### Release signing
 The **Signed release APK** manual workflow fails closed unless these private secrets exist:

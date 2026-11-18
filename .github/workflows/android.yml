@@ -20,6 +20,10 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: spaces-preview-debug-identity-v1
       - name: Restore stable preview signing identity
         env:
           PREVIEW_KEYSTORE: ${{ secrets.PREVIEW_KEYSTORE_BASE64 }}

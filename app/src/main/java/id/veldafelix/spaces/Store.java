@@ -21,7 +21,7 @@ public final class Store {
         p.edit().putStringSet("games",games).apply();
     }
     public String profile(String game, String field, String fallback) { return p.getString(game+"."+field,fallback); }
-    public void profile(String game, String field, String value) { p.edit().putString(game+"."+field,value).apply(); }
+    public void setProfile(String game, String field, String value) { p.edit().putString(game+"."+field,value).apply(); }
     public JSONArray history() {
         try { return new JSONArray(p.getString("history","[]")); } catch (Exception e) { return new JSONArray(); }
     }

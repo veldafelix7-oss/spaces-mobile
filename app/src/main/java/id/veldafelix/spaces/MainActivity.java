@@ -276,7 +276,7 @@ public final class MainActivity extends Activity {
         LinearLayout modes=Glass.row(this);
         String[] ids={"eco","balanced","boost"}; String[] labels={t("Hemat","Eco"),t("Seimbang","Balanced"),t("Performa","Performance")};
         for(int i=0;i<ids.length;i++) { if(i>0) Glass.gap(modes,8); final String mode=ids[i];
-            modes.addView(button(labels[i],store.profile(gameId,"mode","balanced").equals(mode),()->{ store.profile(gameId,"mode",mode); render(); }),new LinearLayout.LayoutParams(0,-2,1)); }
+            modes.addView(button(labels[i],store.profile(gameId,"mode","balanced").equals(mode),()->{ store.setProfile(gameId,"mode",mode); render(); }),new LinearLayout.LayoutParams(0,-2,1)); }
         page.addView(modes);
         section(t("Refresh rate layar","Display refresh rate"),t("Bukan pembuka batas FPS game. Pilihan mengikuti mode layar perangkat.","Does not unlock game FPS. Options follow the device display modes."));
         LinearLayout refresh=Glass.row(this);
@@ -300,7 +300,7 @@ public final class MainActivity extends Activity {
         Glass.gap(page,12); page.addView(button(t("Lihat hasil engine terakhir","View last engine results"),false,()->info("Engine",store.p.getString("last_engine_log",t("Belum ada sesi.","No session yet.")))));
     }
     private void addHz(LinearLayout row,String game,String value,String label) {
-        row.addView(button(label,store.profile(game,"refresh","system").equals(value),()->{ store.profile(game,"refresh",value); render(); }),new LinearLayout.LayoutParams(0,-2,1));
+        row.addView(button(label,store.profile(game,"refresh","system").equals(value),()->{ store.setProfile(game,"refresh",value); render(); }),new LinearLayout.LayoutParams(0,-2,1));
     }
     private void toggle(LinearLayout parent,String title,String description,String key,boolean fallback) {
         LinearLayout row=Glass.row(this), words=Glass.column(this);

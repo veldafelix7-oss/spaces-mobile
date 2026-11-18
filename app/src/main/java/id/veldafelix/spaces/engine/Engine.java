@@ -16,12 +16,13 @@ public final class Engine {
     private final Context c;
     private final Store store;
     private JSONArray journal;
+    private boolean corrupted=false;
     public Engine(Context c) {
         this.c=c.getApplicationContext(); store=new Store(c);
         try { journal=new JSONArray(store.p.getString("journal","[]")); }
-        catch(Exception e) { journal=new JSONArray(); }
+        catch(Exception e) { journal=new JSONArray(); corrupted=true; }
     }
-    public boolean pending() { return journal.length()>0; }
+    public boolean pending() { return corrupted || journal.length()>0; }
     private void persist() {
         if(!store.p.edit().putString("journal",journal.toString()).commit()) throw new IllegalStateException("Cannot persist recovery journal");
     }
@@ -104,6 +105,7 @@ public final class Engine {
         return log.toString();
     }
     public String restore() {
+        if(corrupted) return "Recovery journal is unreadable. No settings were changed. Do not clear app data before reviewing original device settings.";
         JSONArray left=new JSONArray(); StringBuilder log=new StringBuilder();
         for(int i=journal.length()-1;i>=0;i--) {
             JSONObject e=journal.optJSONObject(i);

@@ -49,7 +49,7 @@ public class AppSmokeTest {
         try { new Store(context).add("com.whatsapp",true); fail("Should reject"); } catch(IllegalArgumentException expected) { }
     }
     @Test public void settingsPersist() {
-        Store store=new Store(context); store.profile("com.tencent.igfit","refresh","60");
+        Store store=new Store(context); store.setProfile("com.tencent.igfit","refresh","60");
         assertEquals("60",new Store(context).profile("com.tencent.igfit","refresh","system"));
     }
     @Test public void telemetryUsesRealBatteryAndMemory() {
