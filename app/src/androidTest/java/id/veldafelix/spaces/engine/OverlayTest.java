@@ -126,6 +126,8 @@ public class OverlayTest {
             snapshot(xy[0],xy[1]);inputWindows();
             final int[] origin=new int[2];inst.runOnMainSync(()->{controller.panelView().getLocationOnScreen(origin);step("panel origin="+origin[0]+","+origin[1]+" size="+controller.panelView().getWidth()+"x"+controller.panelView().getHeight());});
             tap(p.x+p.width/2f,p.y+p.height/2f);step("tap former handle region: "+controller.gestureStatus());
+            tap(origin[0]+controller.panelView().getWidth()/2f,origin[1]+controller.panelView().getHeight()/2f);step("tap panel center: "+controller.gestureStatus());
+            tap(xy[0]+20,xy[1]);step("tap 20px inside collapse: "+controller.gestureStatus());
         }inst.runOnMainSync(()->assertFalse("Collapse failed; "+controller.gestureStatus(),collapseFailed));
     }
     @Test public void heldDragSnapsToTopThenDownwardSwipeOpens() {
