@@ -122,11 +122,11 @@ public class OverlayTest {
         EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);step("panel opened; locating collapse arrow");
         final int[] xy=new int[2];
         inst.runOnMainSync(()->{assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after tap; "+controller.gestureStatus()),controller.isOpen());View arrow=collapse(controller.panelView());assertNotNull(arrow);assertTrue("Collapse control must be laid out",arrow.getWidth()>0 && arrow.getHeight()>0);arrow.getLocationOnScreen(xy);xy[0]+=arrow.getWidth()/2;xy[1]+=arrow.getHeight()/2;});
-        step("tapping collapse arrow at "+xy[0]+","+xy[1]);tap(xy[0],xy[1]);step("collapse tap delivered");if(controller.isOpen()) {
+        step("tapping collapse arrow at "+xy[0]+","+xy[1]);tap(xy[0],xy[1]);step("collapse tap delivered");final boolean collapseFailed=controller.isOpen();if(collapseFailed) {
             snapshot(xy[0],xy[1]);inputWindows();
             final int[] origin=new int[2];inst.runOnMainSync(()->{controller.panelView().getLocationOnScreen(origin);step("panel origin="+origin[0]+","+origin[1]+" size="+controller.panelView().getWidth()+"x"+controller.panelView().getHeight());});
             tap(p.x+p.width/2f,p.y+p.height/2f);step("tap former handle region: "+controller.gestureStatus());
-        }inst.runOnMainSync(()->assertFalse("Collapse failed; "+controller.gestureStatus(),controller.isOpen()));
+        }inst.runOnMainSync(()->assertFalse("Collapse failed; "+controller.gestureStatus(),collapseFailed));
     }
     @Test public void heldDragSnapsToTopThenDownwardSwipeOpens() {
         EdgeDock.Placement p=controller.placement();
