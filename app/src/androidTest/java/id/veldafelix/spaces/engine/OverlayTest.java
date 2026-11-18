@@ -98,16 +98,11 @@ public class OverlayTest {
         assertNotNull("Compositor screenshot unavailable",rendered);rendered.recycle();
     }
     private void inputWindows() {
-        try(ParcelFileDescriptor fd=inst.getUiAutomation().executeShellCommand("dumpsys input");
+        try(ParcelFileDescriptor fd=inst.getUiAutomation().executeShellCommand("logcat -d -t 300 -s InputDispatcher WindowManager");
             java.io.InputStream in=new ParcelFileDescriptor.AutoCloseInputStream(fd)) {
             java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();byte[] b=new byte[4096];int n;
             while((n=in.read(b))!=-1) bytes.write(b,0,n);
-            StringBuilder diagnostic=new StringBuilder();int count=0;
-            for(String line:bytes.toString("UTF-8").split("\n")) {
-                if(line.contains("frame=") && count++<4) diagnostic.append(line.trim()).append(" | ");
-                if(line.contains("displayId=0") && (line.contains("rotation=")||line.contains("orientation="))) diagnostic.append(line.trim()).append(" | ");
-            }
-            step(diagnostic.toString());
+            String log=bytes.toString("UTF-8").replace('\n','|');step("input log="+log.substring(Math.max(0,log.length()-2400)));
         } catch(Exception e) { step("Input diagnostic: "+e.getClass().getSimpleName()); }
     }
     private void snapshot(float x,float y) {

@@ -114,7 +114,7 @@ public final class OverlayController {
                         if(dragging) snap(hp.x+hp.width/2f,hp.y+hp.height/2f);
                         else if(Math.hypot(e.getRawX()-sx,e.getRawY()-sy)<=slop || EdgeDock.inwardSwipe(dock.edge,e.getRawX()-sx,e.getRawY()-sy,dp(12))) {
                             // Finish ACTION_UP before replacing its overlay window/input channel.
-                            main.post(()->{if(!hidden && handle==v) v.performClick();});
+                            v.postOnAnimation(()->{if(!hidden && handle==v) v.performClick();});
                         }
                         return true;
                     case MotionEvent.ACTION_CANCEL:
@@ -184,7 +184,7 @@ public final class OverlayController {
                     closingTouch=top?event.getY()>=getHeight()-dp(48):left?event.getX()>=getWidth()-dp(48):event.getX()<=dp(48);
                 }
                 if(closingTouch) {
-                    if(action==MotionEvent.ACTION_UP) { closingTouch=false;main.post(OverlayController.this::close); }
+                    if(action==MotionEvent.ACTION_UP) { closingTouch=false;window.postOnAnimation(OverlayController.this::close); }
                     else if(action==MotionEvent.ACTION_CANCEL) closingTouch=false;
                     return true;
                 }
