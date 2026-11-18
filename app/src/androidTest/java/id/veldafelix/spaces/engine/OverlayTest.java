@@ -124,16 +124,23 @@ public class OverlayTest {
         if(ui(controller::isOpen)) {
             long deadline=android.os.SystemClock.uptimeMillis()+4000;
             while(!ui(controller::inputReady) && android.os.SystemClock.uptimeMillis()<deadline) android.os.SystemClock.sleep(25);
+            if(!ui(controller::inputReady)) inputWindows();
             assertTrue("Panel never acquired its input window: "+ui(controller::gestureStatus),ui(controller::inputReady));
         }
     }
     private void inputWindows() {
-        try(ParcelFileDescriptor fd=inst.getUiAutomation().executeShellCommand("logcat -d -t 80 -s InputDispatcher");
+        diagnostic("input windows", "dumpsys input | grep -E 'spaces-|Focused|focus|Window #|displayId=|touchableRegion|dispatchingTimeout|inputConfig' ");
+        diagnostic("window state", "dumpsys window windows | grep -E -A 48 'Window #[0-9]+ Window.*spaces-(panel|handle)' ");
+    }
+    private void diagnostic(String label,String command) {
+        try(ParcelFileDescriptor fd=inst.getUiAutomation().executeShellCommand(command);
             java.io.InputStream in=new ParcelFileDescriptor.AutoCloseInputStream(fd)) {
             java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();byte[] b=new byte[4096];int n;
             while((n=in.read(b))!=-1) bytes.write(b,0,n);
-            String log=bytes.toString("UTF-8").replace('\n','|');step("input log="+log.substring(Math.max(0,log.length()-2400)));
-        } catch(Exception e) { step("Input diagnostic: "+e.getClass().getSimpleName()); }
+            String log=bytes.toString("UTF-8");
+            // Keep each annotation bounded without losing the start of the window dump.
+            for(int i=0;i<Math.min(log.length(),14400);i+=2800) step(label+": "+log.substring(i,Math.min(i+2800,log.length())));
+        } catch(Exception e) { step(label+": "+e.getClass().getSimpleName()); }
     }
     private void snapshot(float x,float y) {
         android.graphics.Bitmap bitmap=inst.getUiAutomation().takeScreenshot();
