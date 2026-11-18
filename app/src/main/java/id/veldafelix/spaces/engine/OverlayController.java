@@ -163,14 +163,15 @@ public final class OverlayController {
         if(panel!=null || hidden || handle==null) return;
         final String edge=dock.edge;
         boolean top=EdgeDock.TOP.equals(edge),left=EdgeDock.LEFT.equals(edge);
-        int pw=Math.min(dp(top?400:280),width()),ph=Math.min(height(),top?dp(300):height());
+        int panelY=top?dock.y:0;
+        int pw=Math.min(dp(top?400:280),width()),ph=Math.min(height()-panelY,top?dp(300):height());
         FrameLayout frame=new FrameLayout(c) {
             private boolean closingTouch=false;
             @Override public boolean dispatchTouchEvent(MotionEvent event) {
                 int action=event.getActionMasked();
                 gestureState="panel action="+action+" x="+event.getX()+" y="+event.getY();
                 if(action==MotionEvent.ACTION_DOWN) {
-                    closingTouch=top?event.getY()>=getHeight()-dp(32):left?event.getX()>=getWidth()-dp(32):event.getX()<=dp(32);
+                    closingTouch=top?event.getY()>=getHeight()-dp(48):left?event.getX()>=getWidth()-dp(48):event.getX()<=dp(48);
                 }
                 if(closingTouch) {
                     if(action==MotionEvent.ACTION_UP) { closingTouch=false;main.post(OverlayController.this::close); }
@@ -185,7 +186,7 @@ public final class OverlayController {
         ScrollView scroll=new ScrollView(c);scroll.setFillViewport(true);scroll.setVerticalScrollBarEnabled(false);
         FrameLayout.LayoutParams sp=new FrameLayout.LayoutParams(-1,-1);
         // Keep the collapse control outside the scroller so it is always reachable.
-        sp.setMargins(left?dp(12):dp(36),dp(12),left?dp(36):dp(12),top?dp(36):dp(12));frame.addView(scroll,sp);
+        sp.setMargins(left?dp(12):dp(52),dp(12),left?dp(52):dp(12),top?dp(52):dp(12));frame.addView(scroll,sp);
         LinearLayout content=Glass.column(c);scroll.addView(content,new ScrollView.LayoutParams(-1,-2));
         content.addView(Glass.text(c,"spaces : mobile",18,Glass.INK,true));Glass.gap(content,3);
         content.addView(Glass.text(c,store.t("SESI PERMAINAN","GAME SESSION"),9,Glass.MUTED,true));Glass.gap(content,12);
@@ -209,8 +210,12 @@ public final class OverlayController {
         FrameLayout.LayoutParams cp=new FrameLayout.LayoutParams(top?dp(52):dp(24),top?dp(24):dp(52),top?Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL:(left?Gravity.RIGHT:Gravity.LEFT)|Gravity.CENTER_VERTICAL);
         // For the collapse strip, render the glass on the panel's inner edge.
         collapse.direction(top?EdgeDock.TOP:left?EdgeDock.RIGHT:EdgeDock.LEFT,top);
+        // Keep the narrow chevron inside its own panel, away from the window boundary.
+        if(top) cp.bottomMargin=dp(16);
+        else if(left) cp.rightMargin=dp(16);
+        else cp.leftMargin=dp(16);
         frame.addView(collapse,cp);
-        WindowManager.LayoutParams p=params(pw,ph);p.setTitle("spaces-panel");p.x=top?Math.max(0,Math.min(width()-pw,dock.x+dock.width/2-pw/2)):left?0:width()-pw;p.y=0;
+        WindowManager.LayoutParams p=params(pw,ph);p.setTitle("spaces-panel");p.x=top?Math.max(0,Math.min(width()-pw,dock.x+dock.width/2-pw/2)):left?0:width()-pw;p.y=panelY;
         panel=frame;
         try {
             window.removeAllViews();window.addView(panel,new FrameLayout.LayoutParams(-1,-1));
