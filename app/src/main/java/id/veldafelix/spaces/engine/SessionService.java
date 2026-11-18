@@ -100,6 +100,14 @@ public final class SessionService extends Service {
             main.post(()->{ running=false; stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(); });
         });
     }
+    @Override public void onConfigurationChanged(android.content.res.Configuration config) {
+        super.onConfigurationChanged(config);
+        if(overlay!=null) {
+            overlay.hide();
+            overlay=new OverlayController(this,()->end("manual"));
+            if(!ending && android.provider.Settings.canDrawOverlays(this)) overlay.show();
+        }
+    }
     @Override public void onDestroy() {
         main.removeCallbacksAndMessages(null);
         if(overlay!=null) overlay.hide();

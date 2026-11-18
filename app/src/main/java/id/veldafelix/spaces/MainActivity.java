@@ -84,21 +84,21 @@ public final class MainActivity extends Activity {
         FrameLayout root=new FrameLayout(this); root.addView(new Glass.Background(this),new FrameLayout.LayoutParams(-1,-1));
         LinearLayout shell=Glass.row(this); shell.setGravity(Gravity.TOP); shell.setPadding(dp(14),dp(14),dp(20),dp(10));
         root.addView(shell,new FrameLayout.LayoutParams(-1,-1));
-        LinearLayout rail=Glass.column(this); rail.setGravity(Gravity.CENTER_HORIZONTAL); rail.setPadding(dp(8),dp(12),dp(8),dp(10));
+        LinearLayout rail=Glass.column(this); rail.setGravity(Gravity.CENTER_HORIZONTAL); rail.setPadding(dp(8),dp(8),dp(8),dp(8));
         rail.setBackground(Glass.surface(0x88FFFFFF,dp(26)));
         shell.addView(rail,new LinearLayout.LayoutParams(dp(78),-1));
         ImageView lion=new ImageView(this); lion.setImageResource(R.drawable.ic_lion); lion.setContentDescription("spaces : mobile");
-        rail.addView(lion,new LinearLayout.LayoutParams(dp(44),dp(44))); Glass.gap(rail,18);
+        rail.addView(lion,new LinearLayout.LayoutParams(dp(36),dp(36))); Glass.gap(rail,10);
         String[] symbols={"◈","≋","◎"}; String[] titles={t("Main","Play"),t("Performa","Engine"),t("Perangkat","Device")};
         for(int i=0;i<3;i++) {
             final int index=i;
-            LinearLayout nav=Glass.column(this); nav.setGravity(Gravity.CENTER); nav.setPadding(0,dp(9),0,dp(9));
+            LinearLayout nav=Glass.column(this); nav.setGravity(Gravity.CENTER); nav.setPadding(0,dp(6),0,dp(6));
             if(i==tab) nav.setBackground(Glass.surface(0xFAFFFFFF,dp(17)));
-            TextView glyph=text(symbols[i],25,i==tab?Glass.ACCENT:Glass.MUTED,false); nav.addView(glyph);
+            TextView glyph=text(symbols[i],22,i==tab?Glass.ACCENT:Glass.MUTED,false); nav.addView(glyph);
             Glass.gap(nav,3); nav.addView(text(titles[i],10,i==tab?Glass.INK:Glass.MUTED,i==tab));
             nav.setContentDescription(titles[i]); nav.setClickable(true); nav.setFocusable(true); nav.setHapticFeedbackEnabled(false);
             nav.setOnClickListener(v->{ if(tab!=index) { tab=index; render(); } });
-            rail.addView(nav,new LinearLayout.LayoutParams(-1,dp(67))); Glass.gap(rail,5);
+            rail.addView(nav,new LinearLayout.LayoutParams(-1,dp(58))); Glass.gap(rail,3);
         }
         View spacer=new View(this); rail.addView(spacer,new LinearLayout.LayoutParams(1,0,1));
         TextView language=text(store.en()?"EN":"ID",11,Glass.ACCENT,true); language.setGravity(Gravity.CENTER);
