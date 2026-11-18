@@ -66,9 +66,12 @@ public class OverlayTest {
         e.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);assertTrue(inst.getUiAutomation().injectInputEvent(e,true));e.recycle();
     }
     private void settle() {
-        inst.waitForIdleSync();
-        try { inst.getUiAutomation().waitForIdle(150,4000); }
-        catch(java.util.concurrent.TimeoutException e) { throw new AssertionError("Overlay windows did not settle",e); }
+        // A queued UI-frame latch is bounded; waiting for a globally idle accessibility stream
+        // can stall when an overlay itself keeps producing accessibility/window events.
+        java.util.concurrent.CountDownLatch frame=new java.util.concurrent.CountDownLatch(1);
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(frame::countDown,160);
+        try { assertTrue("Overlay UI frame timed out",frame.await(4,java.util.concurrent.TimeUnit.SECONDS)); }
+        catch(InterruptedException e) { Thread.currentThread().interrupt();throw new AssertionError(e); }
     }
     private void tap(float x,float y) {
         long now=android.os.SystemClock.uptimeMillis();pointer(android.view.MotionEvent.ACTION_DOWN,now,now,x,y);

@@ -102,7 +102,7 @@ jobs:
             adb shell pm path id.veldafelix.spaces.preview | grep -q package:
             adb shell pm path id.veldafelix.spaces.preview2 | grep -q package:
             adb install apks/androidTest/debug/app-debug-androidTest.apk
-            adb shell am instrument -w id.veldafelix.spaces.preview2.test/androidx.test.runner.AndroidJUnitRunner | tee emulator-results/instrumentation.txt
+            timeout 180s adb shell am instrument -w -r id.veldafelix.spaces.preview2.test/androidx.test.runner.AndroidJUnitRunner | tee emulator-results/instrumentation.txt
             adb pull /sdcard/Android/data/id.veldafelix.spaces.preview2/files/screenshots emulator-results/ || true
             adb logcat -d -s AndroidRuntime > emulator-results/crashes.txt
             python3 scripts/check-instrumentation.py
