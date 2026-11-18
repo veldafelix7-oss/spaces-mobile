@@ -21,6 +21,15 @@ public class OverlayTest {
     private Context c;
     private MainActivity activity;
     private OverlayController controller;
+    /** Read View/controller state only on its owning thread, including failure snapshots. */
+    private <T> T ui(java.util.concurrent.Callable<T> read) {
+        if(android.os.Looper.myLooper()==android.os.Looper.getMainLooper()) {
+            try { return read.call(); } catch(Exception e) { throw new AssertionError(e); }
+        }
+        java.util.concurrent.FutureTask<T> task=new java.util.concurrent.FutureTask<>(read);
+        inst.runOnMainSync(task);
+        try { return task.get(); } catch(Exception e) { throw new AssertionError(e); }
+    }
     private void shell(String command) throws Exception {
         try(ParcelFileDescriptor fd=inst.getUiAutomation().executeShellCommand(command);
             java.io.InputStream in=new ParcelFileDescriptor.AutoCloseInputStream(fd)) { byte[] b=new byte[512];while(in.read(b)!=-1) {} }
@@ -53,13 +62,13 @@ public class OverlayTest {
         fail("Underlying activity did not acquire input focus");
     }
     @Test public void initialHandleIsFlushWithRightEdge() {
-        inst.runOnMainSync(()->{assertNotNull(controller.handleView());assertEquals(EdgeDock.RIGHT,controller.placement().edge);
+        inst.runOnMainSync(()->{assertNotNull(controller.handleView());assertEquals(EdgeDock.RIGHT,ui(controller::placement).edge);
             int width=activity.getSystemService(android.view.WindowManager.class).getCurrentWindowMetrics().getBounds().width();
-            assertEquals(width,controller.placement().x+controller.placement().width);assertTrue(controller.placement().height>controller.placement().width);});
+            assertEquals(width,ui(controller::placement).x+ui(controller::placement).width);assertTrue(ui(controller::placement).height>ui(controller::placement).width);});
     }
     @Test public void topDockRotatesAndRestoresPreference() {
-        inst.runOnMainSync(()->{controller.moveTo(EdgeDock.TOP,.6f);assertTrue(controller.placement().y>=0);assertTrue(controller.placement().width>controller.placement().height);
-            controller.hide();controller=new OverlayController(activity,()->{});controller.show();assertEquals(EdgeDock.TOP,controller.placement().edge);assertEquals(.6f,controller.placement().fraction,.001f);});
+        inst.runOnMainSync(()->{controller.moveTo(EdgeDock.TOP,.6f);assertTrue(ui(controller::placement).y>=0);assertTrue(ui(controller::placement).width>ui(controller::placement).height);
+            controller.hide();controller=new OverlayController(activity,()->{});controller.show();assertEquals(EdgeDock.TOP,ui(controller::placement).edge);assertEquals(.6f,ui(controller::placement).fraction,.001f);});
     }
     private View collapse(View v) {
         if("Tutup panel sesi".contentEquals(v.getContentDescription()==null?"":v.getContentDescription())) return v;
@@ -67,15 +76,15 @@ public class OverlayTest {
         return null;
     }
     @Test public void edgeArrowClosesWithoutScrollingAndRestoresHandle() {
-        inst.runOnMainSync(()->{controller.handleView().performClick();assertTrue(controller.isOpen());assertFalse(controller.handleView().isAttachedToWindow());
-            View arrow=collapse(controller.panelView());assertNotNull(arrow);assertTrue(arrow.isShown());arrow.performClick();assertFalse(controller.isOpen());assertEquals(View.VISIBLE,controller.handleView().getVisibility());});
+        inst.runOnMainSync(()->{controller.handleView().performClick();assertTrue(ui(controller::isOpen));assertFalse(controller.handleView().isAttachedToWindow());
+            View arrow=collapse(controller.panelView());assertNotNull(arrow);assertTrue(arrow.isShown());arrow.performClick();assertFalse(ui(controller::isOpen));assertEquals(View.VISIBLE,controller.handleView().getVisibility());});
     }
     @Test public void leftAndTopPanelsAlsoCloseFromTheirEdge() {
-        inst.runOnMainSync(()->{for(String edge:new String[]{EdgeDock.LEFT,EdgeDock.TOP}) {controller.moveTo(edge,.5f);controller.handleView().performClick();assertTrue(controller.isOpen());assertNotNull(collapse(controller.panelView()));collapse(controller.panelView()).performClick();assertFalse(controller.isOpen());}});
+        inst.runOnMainSync(()->{for(String edge:new String[]{EdgeDock.LEFT,EdgeDock.TOP}) {controller.moveTo(edge,.5f);controller.handleView().performClick();assertTrue(ui(controller::isOpen));assertNotNull(collapse(controller.panelView()));collapse(controller.panelView()).performClick();assertFalse(ui(controller::isOpen));}});
     }
     @Test public void legacyPositionMigratesToDockAndStaysWithinScreen() {
         inst.runOnMainSync(()->{controller.hide();new Store(c).p.edit().remove("dock_edge").remove("dock_offset").putInt("handle_x",99999).putInt("handle_y",99999).commit();
-            controller=new OverlayController(activity,()->{});controller.show();assertNotNull(controller.handleView());assertTrue(controller.placement().x>=0);assertTrue(controller.placement().y>=0);assertTrue(new Store(c).p.contains("dock_edge"));assertFalse(new Store(c).p.contains("handle_x"));});
+            controller=new OverlayController(activity,()->{});controller.show();assertNotNull(controller.handleView());assertTrue(ui(controller::placement).x>=0);assertTrue(ui(controller::placement).y>=0);assertTrue(new Store(c).p.contains("dock_edge"));assertFalse(new Store(c).p.contains("handle_x"));});
     }
     private void step(String message) {
         android.os.Bundle status=new android.os.Bundle();status.putString("spaces_step",message);inst.sendStatus(2,status);
@@ -135,33 +144,32 @@ public class OverlayTest {
     private void tap(float x,float y) { input("tap "+Math.round(x)+" "+Math.round(y));settle(); }
     @Test public void actualWindowTapsOpenAndCollapsePanel() {
         step("opening by actual handle tap");
-        EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);step("panel opened; locating collapse arrow");
+        EdgeDock.Placement p=ui(controller::placement);tap(p.x+p.width/2f,p.y+p.height/2f);step("panel opened; locating collapse arrow");
         final int[] xy=new int[2];
-        inst.runOnMainSync(()->{assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after tap; "+controller.gestureStatus()),controller.isOpen());View arrow=collapse(controller.panelView());assertNotNull(arrow);assertTrue("Collapse control must be laid out",arrow.getWidth()>0 && arrow.getHeight()>0);arrow.getLocationOnScreen(xy);xy[0]+=arrow.getWidth()/2;xy[1]+=arrow.getHeight()/2;});
-        step("tapping collapse arrow at "+xy[0]+","+xy[1]);tap(xy[0],xy[1]);step("collapse tap delivered");final boolean collapseFailed=controller.isOpen();if(collapseFailed) {
+        inst.runOnMainSync(()->{assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after tap; "+ui(controller::gestureStatus)),ui(controller::isOpen));View arrow=collapse(controller.panelView());assertNotNull(arrow);assertTrue("Collapse control must be laid out",arrow.getWidth()>0 && arrow.getHeight()>0);arrow.getLocationOnScreen(xy);xy[0]+=arrow.getWidth()/2;xy[1]+=arrow.getHeight()/2;});
+        step("tapping collapse arrow at "+xy[0]+","+xy[1]);tap(xy[0],xy[1]);step("collapse tap delivered");final boolean collapseFailed=ui(controller::isOpen);if(collapseFailed) {
             snapshot(xy[0],xy[1]);inputWindows();
-            step("original trace="+controller.gestureStatus());
-            tap(xy[0],xy[1]);step("second tap same target; open="+controller.isOpen()+" "+controller.gestureStatus());
-        }inst.runOnMainSync(()->assertFalse("Collapse failed; "+controller.gestureStatus(),collapseFailed));
+            step("original trace="+ui(controller::gestureStatus));
+        }inst.runOnMainSync(()->assertFalse("Collapse failed; "+ui(controller::gestureStatus),collapseFailed));
     }
     @Test public void heldDragSnapsToTopThenDownwardSwipeOpens() {
-        EdgeDock.Placement p=controller.placement();
+        EdgeDock.Placement p=ui(controller::placement);
         int w=activity.getSystemService(android.view.WindowManager.class).getCurrentWindowMetrics().getBounds().width();
         step("dragging handle to top with a held OS touch stream");
         input("swipe "+(p.x+p.width/2)+" "+(p.y+p.height/2)+" "+(w/2)+" 2 600");settle();
-        inst.runOnMainSync(()->{assertEquals(controller.gestureStatus(),EdgeDock.TOP,controller.placement().edge);assertTrue(controller.placement().width>controller.placement().height);});
-        p=controller.placement();int x=p.x+p.width/2,y=p.y+p.height/2;
+        inst.runOnMainSync(()->{assertEquals(ui(controller::gestureStatus),EdgeDock.TOP,ui(controller::placement).edge);assertTrue(ui(controller::placement).width>ui(controller::placement).height);});
+        p=ui(controller::placement);int x=p.x+p.width/2,y=p.y+p.height/2;
         step("opening top dock by downward swipe");
         int inward=Math.round(60*activity.getResources().getDisplayMetrics().density);
-        input("swipe "+x+" "+y+" "+x+" "+(y+inward)+" 80");settle();if(!controller.isOpen()) inputWindows();
-        inst.runOnMainSync(()->assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after swipe; "+controller.gestureStatus()),controller.isOpen()));
+        input("swipe "+x+" "+y+" "+x+" "+(y+inward)+" 80");settle();if(!ui(controller::isOpen)) inputWindows();
+        inst.runOnMainSync(()->assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after swipe; "+ui(controller::gestureStatus)),ui(controller::isOpen)));
     }
 
     @Test public void rightInwardSwipeOpensPanel() {
-        EdgeDock.Placement p=controller.placement();int x=p.x+p.width/2,y=p.y+p.height/2;
+        EdgeDock.Placement p=ui(controller::placement);int x=p.x+p.width/2,y=p.y+p.height/2;
         int inward=Math.round(60*activity.getResources().getDisplayMetrics().density);
         input("swipe "+x+" "+y+" "+(x-inward)+" "+y+" 80");settle();
-        inst.runOnMainSync(()->assertTrue("Right swipe failed; "+controller.gestureStatus(),controller.isOpen()));
+        inst.runOnMainSync(()->assertTrue("Right swipe failed; "+ui(controller::gestureStatus),ui(controller::isOpen)));
     }
 
     private void tapCollapseGlyph(String edge) {
@@ -176,10 +184,10 @@ public class OverlayTest {
     @Test public void everyDockOpensAndClosesRepeatedlyAtVisibleChevron() {
         for(String edge:new String[]{EdgeDock.RIGHT,EdgeDock.LEFT,EdgeDock.TOP}) for(int cycle=0;cycle<2;cycle++) {
             inst.runOnMainSync(()->controller.moveTo(edge,.55f));settle();
-            EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);
-            inst.runOnMainSync(()->assertTrue("Open "+edge+": "+controller.gestureStatus(),controller.isOpen()));
+            EdgeDock.Placement p=ui(controller::placement);tap(p.x+p.width/2f,p.y+p.height/2f);
+            inst.runOnMainSync(()->assertTrue("Open "+edge+": "+ui(controller::gestureStatus),ui(controller::isOpen)));
             tapCollapseGlyph(edge);
-            inst.runOnMainSync(()->assertFalse("Close "+edge+": "+controller.gestureStatus(),controller.isOpen()));
+            inst.runOnMainSync(()->assertFalse("Close "+edge+": "+ui(controller::gestureStatus),ui(controller::isOpen)));
             awaitActivityFocus();
         }
     }
@@ -195,22 +203,22 @@ public class OverlayTest {
         int old=audio.getStreamVolume(stream);
         try {
             audio.setStreamVolume(stream,0,0);
-            EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);
+            EdgeDock.Placement p=ui(controller::placement);tap(p.x+p.width/2f,p.y+p.height/2f);
             final int[] xy=new int[2];
             inst.runOnMainSync(()->{
-                assertTrue(controller.isOpen());android.widget.SeekBar bar=seekBar(controller.panelView());assertNotNull(bar);assertTrue(bar.isShown());
+                assertTrue(ui(controller::isOpen));android.widget.SeekBar bar=seekBar(controller.panelView());assertNotNull(bar);assertTrue(bar.isShown());
                 bar.getLocationOnScreen(xy);xy[0]+=bar.getWidth()*3/4;xy[1]+=bar.getHeight()/2;
             });
             tap(xy[0],xy[1]);assertTrue("Media control must receive OS touches",audio.getStreamVolume(stream)>0);
-            tapCollapseGlyph(EdgeDock.RIGHT);inst.runOnMainSync(()->assertFalse(controller.isOpen()));awaitActivityFocus();
+            tapCollapseGlyph(EdgeDock.RIGHT);inst.runOnMainSync(()->assertFalse(ui(controller::isOpen)));awaitActivityFocus();
         } finally { audio.setStreamVolume(stream,old,0); }
     }
 
     @Test public void backClosesInteractivePanelAndReturnsFocus() throws Exception {
-        EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);
-        inst.runOnMainSync(()->assertTrue(controller.isOpen()));
+        EdgeDock.Placement p=ui(controller::placement);tap(p.x+p.width/2f,p.y+p.height/2f);
+        inst.runOnMainSync(()->assertTrue(ui(controller::isOpen)));
         shell("input keyevent 4");
-        settle();inst.runOnMainSync(()->assertFalse(controller.isOpen()));awaitActivityFocus();
+        settle();inst.runOnMainSync(()->assertFalse(ui(controller::isOpen)));awaitActivityFocus();
     }
 
 }

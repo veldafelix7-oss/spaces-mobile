@@ -158,10 +158,15 @@ public final class OverlayController {
     private void recordError(Exception error) {
         store.p.edit().putString("overlay_error",error.getClass().getSimpleName()+": "+error.getMessage()).apply();
     }
+    @androidx.annotation.MainThread
     EdgeDock.Placement placement() { return dock; }
+    @androidx.annotation.MainThread
     View handleView() { return handle; }
+    @androidx.annotation.MainThread
     View panelView() { return panel; }
+    @androidx.annotation.MainThread
     String gestureStatus() { return gestureState+"; trace="+String.join(" > ",gestureTrace); }
+    @androidx.annotation.MainThread
     public boolean isOpen() { return panel!=null; }
     public void update(JSONObject point) { sample=point;renderMetrics(); }
     private void renderMetrics() {
