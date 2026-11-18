@@ -47,7 +47,7 @@ public class OverlayTest {
         inst.runOnMainSync(()->{controller=new OverlayController(activity,()->{});controller.show();});settle();
     }
     @After public void finish() throws Exception {
-        inst.runOnMainSync(()->{controller.hide();activity.finish();});inst.waitForIdleSync();shell("appops set "+c.getPackageName()+" SYSTEM_ALERT_WINDOW default");
+        inst.runOnMainSync(()->{if(controller!=null) controller.hide();if(activity!=null) activity.finish();});inst.waitForIdleSync();shell("appops set "+c.getPackageName()+" SYSTEM_ALERT_WINDOW default");
     }
     @AfterClass public static void restoreDisplayRotation() {
         InstrumentationRegistry.getInstrumentation().getUiAutomation().setRotation(android.app.UiAutomation.ROTATION_UNFREEZE);
@@ -59,7 +59,7 @@ public class OverlayTest {
             if(focused[0]) return;
             android.os.SystemClock.sleep(40);
         } while(android.os.SystemClock.uptimeMillis()<deadline);
-        fail("Underlying activity did not acquire input focus");
+        inputWindows();fail("Underlying activity did not acquire input focus");
     }
     @Test public void initialHandleIsFlushWithRightEdge() {
         inst.runOnMainSync(()->{assertNotNull(controller.handleView());assertEquals(EdgeDock.RIGHT,ui(controller::placement).edge);
@@ -129,15 +129,24 @@ public class OverlayTest {
         }
     }
     private void inputWindows() {
-        diagnostic("input windows", "dumpsys input | grep -E 'spaces-|Focused|focus|Window #|displayId=|touchableRegion|dispatchingTimeout|inputConfig' ");
-        diagnostic("window state", "dumpsys window windows | grep -E -A 48 'Window #[0-9]+ Window.*spaces-(panel|handle)' ");
+        // executeShellCommand is not a shell: filter dumps in Java, not with pipes.
+        diagnostic("input windows", "dumpsys input");
+        diagnostic("window state", "dumpsys window windows");
     }
     private void diagnostic(String label,String command) {
         try(ParcelFileDescriptor fd=inst.getUiAutomation().executeShellCommand(command);
             java.io.InputStream in=new ParcelFileDescriptor.AutoCloseInputStream(fd)) {
             java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();byte[] b=new byte[4096];int n;
             while((n=in.read(b))!=-1) bytes.write(b,0,n);
-            String log=bytes.toString("UTF-8").replace('\n','|');
+            StringBuilder filtered=new StringBuilder();int context=0;
+            for(String line:bytes.toString("UTF-8").split("\n")) {
+                if(label.equals("input windows")) {
+                    if(line.contains("Input Dispatcher State:")) context=180;
+                } else if(line.matches(".*Window #[0-9]+ Window.*spaces-(panel|handle).*")) context=55;
+                if(context>0) { filtered.append(line).append('|');context--; }
+                else if(line.contains("mCurrentFocus=") || line.contains("mFocusedApp=")) filtered.append(line).append('|');
+            }
+            String log=filtered.toString();
             // Keep each annotation bounded without losing the start of the window dump.
             for(int i=0;i<Math.min(log.length(),14400);i+=2800) {
                 android.os.Bundle status=new android.os.Bundle();
