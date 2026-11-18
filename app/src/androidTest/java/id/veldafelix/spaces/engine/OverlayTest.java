@@ -67,7 +67,7 @@ public class OverlayTest {
     private void pointer(int action,long down,float x,float y) {
         android.view.MotionEvent e=android.view.MotionEvent.obtain(down,android.os.SystemClock.uptimeMillis(),action,x,y,0);
         e.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
-        try { assertTrue("OS input injection rejected",inst.getUiAutomation().injectInputEvent(e,false)); }
+        try { assertTrue("OS input injection rejected",inst.getUiAutomation().injectInputEvent(e,true)); }
         finally { e.recycle(); }
     }
     private void input(String args) {
@@ -112,8 +112,8 @@ public class OverlayTest {
         android.graphics.Canvas canvas=new android.graphics.Canvas(image);android.graphics.Paint paint=new android.graphics.Paint();
         paint.setColor(android.graphics.Color.RED);paint.setStrokeWidth(5);
         canvas.drawLine(x-25,y,x+25,y,paint);canvas.drawLine(x,y-25,x,y+25,paint);
-        android.graphics.Bitmap small=android.graphics.Bitmap.createScaledBitmap(image,640,360,true);image.recycle();
-        java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();small.compress(android.graphics.Bitmap.CompressFormat.JPEG,75,bytes);small.recycle();
+        android.graphics.Bitmap small=android.graphics.Bitmap.createScaledBitmap(image,480,270,true);image.recycle();
+        java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();small.compress(android.graphics.Bitmap.CompressFormat.JPEG,40,bytes);small.recycle();
         android.os.Bundle status=new android.os.Bundle();status.putString("spaces_image",android.util.Base64.encodeToString(bytes.toByteArray(),android.util.Base64.NO_WRAP));inst.sendStatus(2,status);
     }
     private void tap(float x,float y) { input("tap "+Math.round(x)+" "+Math.round(y));settle(); }
