@@ -32,6 +32,10 @@ public final class OverlayController {
     private TextView temperature,ram,battery,networkResult;
     private JSONObject sample=new JSONObject();
     private String gestureState="idle";
+    private final java.util.ArrayDeque<String> gestureTrace=new java.util.ArrayDeque<>();
+    private void note(String message) {
+        gestureState=message;if(gestureTrace.size()>=18) gestureTrace.removeFirst();gestureTrace.addLast(message);
+    }
     private final Handler main=new Handler(Looper.getMainLooper());
     private boolean hidden=false,testing=false,windowAttached=false;
     private static final int MOVE_LEFT=0x01010001,MOVE_RIGHT=0x01010002,MOVE_TOP=0x01010003;
@@ -76,7 +80,7 @@ public final class OverlayController {
         dock=place(edge,offset);
         hp=params(dock.width,dock.height);hp.setTitle("spaces-handle");hp.x=dock.x;hp.y=dock.y;
         handle.direction(dock.edge,false);
-        handle.setOnClickListener(v->{gestureState="click";open();});
+        handle.setOnClickListener(v->{note("click");open();});
         handle.setAccessibilityDelegate(new View.AccessibilityDelegate() {
             @Override public void onInitializeAccessibilityNodeInfo(View host,AccessibilityNodeInfo info) {
                 super.onInitializeAccessibilityNodeInfo(host,info);
@@ -95,7 +99,7 @@ public final class OverlayController {
             @Override public boolean onTouch(View v,android.view.MotionEvent e) {
                 switch(e.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
-                        gestureState="down";
+                        note("down");
                         sx=e.getRawX();sy=e.getRawY();ox=hp.x;oy=hp.y;down=e.getEventTime();dragging=false;v.setPressed(true);return true;
                     case MotionEvent.ACTION_MOVE:
                         float dx=e.getRawX()-sx,dy=e.getRawY()-sy;
@@ -105,7 +109,7 @@ public final class OverlayController {
                         }
                         return true;
                     case MotionEvent.ACTION_UP:
-                        gestureState="up drag="+dragging+" dx="+(e.getRawX()-sx)+" dy="+(e.getRawY()-sy);
+                        note("up drag="+dragging+" dx="+(e.getRawX()-sx)+" dy="+(e.getRawY()-sy));
                         v.setPressed(false);
                         if(dragging) snap(hp.x+hp.width/2f,hp.y+hp.height/2f);
                         else if(Math.hypot(e.getRawX()-sx,e.getRawY()-sy)<=slop || EdgeDock.inwardSwipe(dock.edge,e.getRawX()-sx,e.getRawY()-sy,dp(12))) {
@@ -114,7 +118,7 @@ public final class OverlayController {
                         }
                         return true;
                     case MotionEvent.ACTION_CANCEL:
-                        gestureState="cancelled by window/system";
+                        note("cancelled by window/system");
                         v.setPressed(false);applyDock(dock,false);return true;
                     default:return true;
                 }
@@ -122,7 +126,12 @@ public final class OverlayController {
         });
         // One input channel for both states: replacing an overlay ViewRoot can leave
         // input geometry behind during rotation or an in-flight touch transaction.
-        window=new FrameLayout(c);
+        window=new FrameLayout(c) {
+            @Override public boolean dispatchTouchEvent(MotionEvent e) {
+                note("window "+e.getActionMasked()+" local="+e.getX()+","+e.getY()+" raw="+e.getRawX()+","+e.getRawY());
+                return super.dispatchTouchEvent(e);
+            }
+        };
         window.addView(handle,new FrameLayout.LayoutParams(-1,-1));
         try { wm.addView(window,hp);windowAttached=true;saveDock(); }
         catch(Exception error) { recordError(error);handle=null;window=null; }
@@ -144,7 +153,7 @@ public final class OverlayController {
     EdgeDock.Placement placement() { return dock; }
     View handleView() { return handle; }
     View panelView() { return panel; }
-    String gestureStatus() { return gestureState; }
+    String gestureStatus() { return gestureState+"; trace="+String.join(" > ",gestureTrace); }
     public boolean isOpen() { return panel!=null; }
     public void update(JSONObject point) { sample=point;renderMetrics(); }
     private void renderMetrics() {
@@ -161,6 +170,7 @@ public final class OverlayController {
     }
     private void open() {
         if(panel!=null || hidden || handle==null) return;
+        note("open");
         final String edge=dock.edge;
         boolean top=EdgeDock.TOP.equals(edge),left=EdgeDock.LEFT.equals(edge);
         int panelY=top?dock.y:0;
@@ -169,7 +179,7 @@ public final class OverlayController {
             private boolean closingTouch=false;
             @Override public boolean dispatchTouchEvent(MotionEvent event) {
                 int action=event.getActionMasked();
-                gestureState="panel action="+action+" x="+event.getX()+" y="+event.getY();
+                note("panel action="+action+" x="+event.getX()+" y="+event.getY());
                 if(action==MotionEvent.ACTION_DOWN) {
                     closingTouch=top?event.getY()>=getHeight()-dp(48):left?event.getX()>=getWidth()-dp(48):event.getX()<=dp(48);
                 }
@@ -222,7 +232,7 @@ public final class OverlayController {
             wm.updateViewLayout(window,p);
             store.p.edit().remove("overlay_error").apply();
         } catch(Exception error) {
-            recordError(error);gestureState="open failed: "+error.getClass().getSimpleName();
+            recordError(error);note("open failed: "+error.getClass().getSimpleName());
             panel=null;clearMetrics();restoreHandle();
         }
     }
@@ -247,7 +257,7 @@ public final class OverlayController {
     private void clearMetrics() { temperature=null;ram=null;battery=null;networkResult=null; }
     void close() {
         if(panel==null) return;
-        panel=null;clearMetrics();restoreHandle();
+        note("close");panel=null;clearMetrics();restoreHandle();
     }
     public void hide() {
         hidden=true;main.removeCallbacksAndMessages(null);

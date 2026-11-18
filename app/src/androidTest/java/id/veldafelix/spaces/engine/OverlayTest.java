@@ -129,6 +129,8 @@ public class OverlayTest {
         inst.runOnMainSync(()->{assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after tap; "+controller.gestureStatus()),controller.isOpen());View arrow=collapse(controller.panelView());assertNotNull(arrow);assertTrue("Collapse control must be laid out",arrow.getWidth()>0 && arrow.getHeight()>0);arrow.getLocationOnScreen(xy);xy[0]+=arrow.getWidth()/2;xy[1]+=arrow.getHeight()/2;});
         step("tapping collapse arrow at "+xy[0]+","+xy[1]);tap(xy[0],xy[1]);step("collapse tap delivered");final boolean collapseFailed=controller.isOpen();if(collapseFailed) {
             snapshot(xy[0],xy[1]);inputWindows();
+            step("original trace="+controller.gestureStatus());
+            tap(xy[0],xy[1]);step("second tap same target; open="+controller.isOpen()+" "+controller.gestureStatus());
         }inst.runOnMainSync(()->assertFalse("Collapse failed; "+controller.gestureStatus(),collapseFailed));
     }
     @Test public void heldDragSnapsToTopThenDownwardSwipeOpens() {
