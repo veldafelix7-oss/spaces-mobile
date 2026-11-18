@@ -2,7 +2,7 @@
 from pathlib import Path
 import re
 import sys
-output=Path('emulator-results/instrumentation.txt').read_text()
+output=Path(sys.argv[1] if len(sys.argv)>1 else 'emulator-results/instrumentation.txt').read_text()
 # Tiny emulator-only failure screenshots travel through check annotations because
 # redirected artifact downloads are not always accessible to the coding sandbox.
 for image_index,image in enumerate(re.findall(r'INSTRUMENTATION_STATUS: spaces_image=([A-Za-z0-9+/=]+)',output)):

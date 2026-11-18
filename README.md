@@ -4,15 +4,15 @@ Native Android game space for **Tecno Spark 20C (BG7), Android 13 / HiOS 13**, d
 
 ## Download and verified checks
 
-[Download 0.1.1 Android 13 preview APK (~2.6 MB)](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.1-b6bcdd7/spaces-mobile-preview.apk) · [Release + checksum](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.1-b6bcdd7)
+[Download the existing 0.1.0 Android 13 preview APK (~2.5 MB)](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.0-b7891f8/spaces-mobile-preview.apk) · [Original release + checksum](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.0-b7891f8)
 
-**45 JVM tests + 25 Android 13 emulator tests passed; APK compilation and lint passed.** Includes real OS touches, six repeated dock open/close cycles, media-volume touch control, Back/focus return, navigation padding taps, DND recovery and session history. [Successful run](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44366688867). See [test evidence and unverified areas](docs/TEST-RESULTS.md). No measured Tecno/game performance gains are claimed.
+The linked **0.1.0** APK passed 30 JVM + 13 Android emulator tests. The **0.1.1 candidate is on hold**: build/lint/45 JVM tests pass and one full 25-test Android run passed, but an independent repeat failed the first collapse tap (**24/25**). The candidate release was returned to **draft**, not recommended for installation. [Passing run](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44366688867) · [Failed repeat](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44367972091). See [evidence](docs/TEST-RESULTS.md). No measured Tecno/game performance gains are claimed.
 
 ### Important: separate installation, not an in-place update
 
 0.1.1 uses isolated ID `id.veldafelix.spaces.preview2` and label `spaces : mobile · 0.1.1` because the original preview signing key could not be recovered. **Do not uninstall the old app or clear its data.** Old app/data stay separate; collection and permissions must be configured again. End/recover old sessions before using the new install. This is **not migration or a permanent signing solution**. [Original 0.1.0 preview](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.0-b7891f8) remains available.
 
-## Released status: 0.1.1 preview, not a proven performance booster
+## Released status: 0.1.0 preview; 0.1.1 candidate on hold, not a proven performance booster
 
 The app is functional groundwork with honest capability boundaries. A command's successful readback is **not** proof of a higher FPS. Testing on the actual BG7 is necessary; emulator results cannot certify HiOS or game compatibility.
 
@@ -33,7 +33,7 @@ Render downscale (especially HiOS Android 13), SurfaceFlinger FPS capture, proce
 
 ## Build and install (phone-only friendly)
 
-GitHub Actions → **Android checks & preview APK** → successful run → artifact **spaces-mobile-preview**. Extract the ZIP and install `app-debug.apk` on the phone. Android will request permission for the browser/file manager to install unknown apps. The 0.1.1 preview application ID is `id.veldafelix.spaces.preview2` (0.1.0 used `.preview`). Do not install build artifacts from a run whose emulator checks failed.
+GitHub Actions → **Android checks & preview APK** → successful run → artifact **spaces-mobile-preview**. Extract the ZIP and install `app-debug.apk` on the phone. Android will request permission for the browser/file manager to install unknown apps. The unreleased 0.1.1 candidate application ID is `id.veldafelix.spaces.preview2` (0.1.0 used `.preview`). Do not install build artifacts from a run whose emulator checks failed.
 
 The CI preview debug signing key is reused through Actions cache when available (cache eviction can still change it). For reliable updates it can be fixed using repository secret `PREVIEW_KEYSTORE_BASE64` (standard Android debug credentials). Without the secret, a cache miss generates a new debug key; later APKs may not install as updates. Never uninstall to work around this without understanding local data will be lost. A signed release uses a **separate**, private key and application ID.
 

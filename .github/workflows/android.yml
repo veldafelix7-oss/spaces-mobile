@@ -32,6 +32,8 @@ jobs:
             mkdir -p ~/.android
             printf '%s' "$PREVIEW_KEYSTORE" | base64 --decode > ~/.android/debug.keystore
           fi
+      - name: Test fail-closed emulator gate
+        run: python3 scripts/test-emulator-gate.py
       - name: Compile, unit tests, lint and instrumentation APK
         run: python3 scripts/ci-build.py testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
       - name: Verify preview signing and isolated preview identity
@@ -105,11 +107,7 @@ jobs:
             adb shell pm path id.veldafelix.spaces.preview2 | grep -q package:
             adb install apks/androidTest/debug/app-debug-androidTest.apk
             echo "::notice title=Emulator stage::Installation preserved old data; running instrumentation"
-            timeout 180s adb shell am instrument -w -r id.veldafelix.spaces.preview2.test/androidx.test.runner.AndroidJUnitRunner | tee emulator-results/instrumentation.txt
-            echo "::notice title=Emulator stage::Instrumentation command finished; collecting results"
-            timeout 15s adb pull /sdcard/Android/data/id.veldafelix.spaces.preview2/files/screenshots emulator-results/ || true
-            timeout 10s adb logcat -d -s AndroidRuntime > emulator-results/crashes.txt
-            python3 scripts/check-instrumentation.py
+            bash scripts/run-emulator-tests.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -129,7 +127,7 @@ jobs:
         with:
           name: spaces-mobile-preview
           path: preview
-      - name: Publish tested preview (not hardware-certified)
+      - name: Prepare draft preview (manual validation before publication)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -137,4 +135,4 @@ jobs:
           TAG="preview-${VERSION}-${GITHUB_SHA:0:7}"
           cp preview/app-debug.apk spaces-mobile-preview.apk
           sha256sum spaces-mobile-preview.apk > SHA256SUMS.txt
-          gh release create "$TAG" spaces-mobile-preview.apk SHA256SUMS.txt --target "$GITHUB_SHA" --prerelease --title "spaces : mobile · Android 13 preview" --notes-file docs/RELEASE-NOTES.md
+          gh release create "$TAG" spaces-mobile-preview.apk SHA256SUMS.txt --target "$GITHUB_SHA" --draft --prerelease --title "spaces : mobile · Android 13 preview" --notes-file docs/RELEASE-NOTES.md

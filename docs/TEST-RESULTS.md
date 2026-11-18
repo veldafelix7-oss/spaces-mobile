@@ -1,10 +1,18 @@
 # Verified results — 2026-11-18
 
-## Released 0.1.1 evidence
+## 0.1.1 candidate — ON HOLD after repeat failure
+
+**Do not read the successful single run below as stable validation.** The independent repeat [44367972091](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44367972091), source `ffeb50c` (documentation-only changes after `b6bcdd7`), passed build/lint/45 JVM tests but **failed 1 of 25 Android tests**: `actualWindowTapsOpenAndCollapsePanel`. The first collapse tap produced no overlay event; a later diagnostic tap closed it. The test correctly retained the original failure. InputDispatcher warning log was empty. Six repeated glyph cycles, media and Back tests passed, so those alone are insufficient to certify the first-tap path.
+
+The automatically published candidate was returned to **draft** after this result; no revised APK is being recommended to the user. Root cause remains unestablished. Top-safe-band opening is passing, but gesture stability as a whole is not proven. Temporary focus, chevron alignment, frame-boundary updates, display stabilization and screenshot waits must not be described as a definitive collapse fix.
+
+CI policy has now been tightened: two consecutive suites must pass (no retry after a failed suite), and a successful build only prepares a **draft**. Manual review is required before publication. The new gate script is locally tested with mocked adb success/failure/timeout cases; its two-pass path has not yet been exercised on an actual emulator.
+
+### Historical single-run 0.1.1 evidence (superseded for release readiness)
 
 - Tested source: `b6bcdd7e4272b015682953ee302ea78aac41900d`.
 - [Successful run 44366688867](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44366688867): build, emulator and preview publication all succeeded.
-- [Published pre-release](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.1-b6bcdd7); `spaces-mobile-preview.apk`, **2,551,781 bytes**. SHA-256 is attached to the release.
+- Candidate assets (now draft, not a public download); `spaces-mobile-preview.apk`, **2,551,781 bytes**. SHA-256 is attached to the release.
 - APK/test APK compilation, Android lint and **45 JVM tests passed, with 0 failures/errors/skips**. Edge geometry now includes reserved top-band/clamping tests.
 - **25 Android 13 instrumentation tests passed**, including the prior suite plus:
   - Actual right-handle tap and collapse-control center tap, without retrying a missed first tap.

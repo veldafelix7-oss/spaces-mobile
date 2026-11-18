@@ -1,6 +1,6 @@
-# spaces : mobile — 0.1.1 preview
+# spaces : mobile — 0.1.1 candidate (DRAFT — validation hold)
 
-**Verified in CI:** APK build, lint, 45 JVM tests and 25 Android 13 emulator tests passed. Real OS-input checks include six repeated right/left/top open-close cycles, collapse-center tap, drag/swipe, navigation padding, media volume and Back/focus return. [Tested run](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44366688867). This is not Tecno/HiOS or measured game-performance certification.
+**Do not distribute as a validated revision.** Build/lint/45 JVM tests pass. One 25-test Android run passed, but the independent repeat failed the first collapse-arrow touch (24/25). The release was returned to draft. Top-edge reserved-band handling and repeated glyph cycles have passed; this does not resolve the intermittent first-tap failure. [Failed repeat](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44367972091). HiOS/game performance remains unverified.
 
 Follow-up to real Tecno Spark 20C feedback:
 - Thin edge-docked sidebar tab with chevron. Hold and drag to snap left/right/top; top tab becomes horizontal. Edge and normalized position survive rotation/restart; legacy positions migrate.
