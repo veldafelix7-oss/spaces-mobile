@@ -2,6 +2,12 @@
 
 Native Android game space for **Tecno Spark 20C (BG7), Android 13 / HiOS 13**, designed around 4 GB physical RAM. Landscape, restrained light glass, almost invisible blue tint. No WebView, Flutter engine, ads, account or analytics.
 
+## Download and verified checks
+
+[Download the Android 13 preview APK (~2.5 MB)](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.0-b7891f8/spaces-mobile-preview.apk) · [Release + checksum](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.0-b7891f8)
+
+**30 JVM tests + 13 Android 13 emulator tests passed; APK compilation and lint passed.** See [actual test results and unverified areas](docs/TEST-RESULTS.md). No Tecno/game performance gains have been measured yet.
+
 ## Status: 0.1.0 preview, not a proven performance booster
 
 The app is functional groundwork with honest capability boundaries. A command's successful readback is **not** proof of a higher FPS. Testing on the actual BG7 is necessary; emulator results cannot certify HiOS or game compatibility.
