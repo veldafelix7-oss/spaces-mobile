@@ -121,6 +121,11 @@ public class OverlayTest {
         // for the rendered state; never retry a missed tap or dispatch directly to a View.
         android.graphics.Bitmap rendered=inst.getUiAutomation().takeScreenshot();
         assertNotNull("Compositor screenshot unavailable",rendered);rendered.recycle();
+        if(ui(controller::isOpen)) {
+            long deadline=android.os.SystemClock.uptimeMillis()+4000;
+            while(!ui(controller::inputReady) && android.os.SystemClock.uptimeMillis()<deadline) android.os.SystemClock.sleep(25);
+            assertTrue("Panel never acquired its input window: "+ui(controller::gestureStatus),ui(controller::inputReady));
+        }
     }
     private void inputWindows() {
         try(ParcelFileDescriptor fd=inst.getUiAutomation().executeShellCommand("logcat -d -t 80 -s InputDispatcher");

@@ -127,6 +127,9 @@ public final class OverlayController {
         // One input channel for both states: replacing an overlay ViewRoot can leave
         // input geometry behind during rotation or an in-flight touch transaction.
         window=new FrameLayout(c) {
+            @Override public void onWindowFocusChanged(boolean focused) {
+                super.onWindowFocusChanged(focused);note("focus="+focused);
+            }
             @Override public boolean dispatchKeyEvent(KeyEvent e) {
                 if(panel!=null && e.getKeyCode()==KeyEvent.KEYCODE_BACK) {
                     if(e.getAction()==KeyEvent.ACTION_UP) postOnAnimation(OverlayController.this::close);
@@ -168,6 +171,8 @@ public final class OverlayController {
     String gestureStatus() { return gestureState+"; trace="+String.join(" > ",gestureTrace); }
     @androidx.annotation.MainThread
     public boolean isOpen() { return panel!=null; }
+    @androidx.annotation.MainThread
+    boolean inputReady() { return panel!=null && window!=null && window.hasWindowFocus() && panel.isShown() && panel.getWidth()>0 && panel.getHeight()>0; }
     public void update(JSONObject point) { sample=point;renderMetrics(); }
     private void renderMetrics() {
         if(temperature==null) return;
