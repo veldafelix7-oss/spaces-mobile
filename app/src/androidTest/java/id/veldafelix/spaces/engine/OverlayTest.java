@@ -65,7 +65,7 @@ public class OverlayTest {
         android.os.Bundle status=new android.os.Bundle();status.putString("spaces_step",message);inst.sendStatus(2,status);
     }
     private void input(String args) {
-        try { shell("input touchscreen "+args); }
+        try { shell("input touchscreen -d 0 "+args); }
         catch(Exception e) { throw new AssertionError("Could not deliver shell touch input",e); }
     }
     private void settle() {
