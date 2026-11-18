@@ -65,7 +65,7 @@ public final class OverlayController {
             edge=migrated.edge;offset=migrated.fraction;
         }
         dock=EdgeDock.place(edge,offset,width(),height(),dp(18),dp(52));
-        hp=params(dock.width,dock.height);hp.x=dock.x;hp.y=dock.y;
+        hp=params(dock.width,dock.height);hp.setTitle("spaces-handle");hp.x=dock.x;hp.y=dock.y;
         handle.direction(dock.edge,false);
         handle.setOnClickListener(v->{gestureState="click";open();});
         handle.setAccessibilityDelegate(new View.AccessibilityDelegate() {
@@ -190,7 +190,7 @@ public final class OverlayController {
         // For the collapse strip, render the glass on the panel's inner edge.
         collapse.direction(top?EdgeDock.TOP:left?EdgeDock.RIGHT:EdgeDock.LEFT,top);
         frame.addView(collapse,cp);
-        WindowManager.LayoutParams p=params(pw,ph);p.x=top?Math.max(0,Math.min(width()-pw,dock.x+dock.width/2-pw/2)):left?0:width()-pw;p.y=0;
+        WindowManager.LayoutParams p=params(pw,ph);p.setTitle("spaces-panel");p.x=top?Math.max(0,Math.min(width()-pw,dock.x+dock.width/2-pw/2)):left?0:width()-pw;p.y=0;
         panel=frame;
         try {
             wm.addView(panel,p);

@@ -72,9 +72,17 @@ public class OverlayTest {
         // A queued UI-frame latch is bounded; waiting for a globally idle accessibility stream
         // can stall when an overlay itself keeps producing accessibility/window events.
         java.util.concurrent.CountDownLatch frame=new java.util.concurrent.CountDownLatch(1);
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(frame::countDown,160);
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(frame::countDown,1000);
         try { assertTrue("Overlay UI frame timed out",frame.await(4,java.util.concurrent.TimeUnit.SECONDS)); }
         catch(InterruptedException e) { Thread.currentThread().interrupt();throw new AssertionError(e); }
+    }
+    private void inputWindows() {
+        try(ParcelFileDescriptor fd=inst.getUiAutomation().executeShellCommand("dumpsys input");
+            java.io.InputStream in=new ParcelFileDescriptor.AutoCloseInputStream(fd)) {
+            java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();byte[] b=new byte[4096];int n;
+            while((n=in.read(b))!=-1) bytes.write(b,0,n);
+            for(String line:bytes.toString("UTF-8").split("\n")) if(line.contains("spaces-handle")||line.contains("spaces-panel")) step(line.trim().substring(0,Math.min(1000,line.trim().length())));
+        } catch(Exception e) { step("Input diagnostic: "+e.getClass().getSimpleName()); }
     }
     private void tap(float x,float y) { input("tap "+Math.round(x)+" "+Math.round(y));settle(); }
     @Test public void actualWindowTapsOpenAndCollapsePanel() {
@@ -82,7 +90,7 @@ public class OverlayTest {
         EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);step("panel opened; locating collapse arrow");
         final int[] xy=new int[2];
         inst.runOnMainSync(()->{assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after tap; "+controller.gestureStatus()),controller.isOpen());View arrow=collapse(controller.panelView());assertNotNull(arrow);assertTrue("Collapse control must be laid out",arrow.getWidth()>0 && arrow.getHeight()>0);arrow.getLocationOnScreen(xy);xy[0]+=arrow.getWidth()/2;xy[1]+=arrow.getHeight()/2;});
-        step("tapping collapse arrow at "+xy[0]+","+xy[1]);tap(xy[0],xy[1]);step("collapse tap delivered");inst.runOnMainSync(()->assertFalse("Collapse failed; "+controller.gestureStatus(),controller.isOpen()));
+        step("tapping collapse arrow at "+xy[0]+","+xy[1]);tap(xy[0],xy[1]);step("collapse tap delivered");if(controller.isOpen()) inputWindows();inst.runOnMainSync(()->assertFalse("Collapse failed; "+controller.gestureStatus(),controller.isOpen()));
     }
     @Test public void heldDragSnapsToTopThenTapOpens() {
         EdgeDock.Placement p=controller.placement();
@@ -92,7 +100,7 @@ public class OverlayTest {
         inst.runOnMainSync(()->{assertEquals(EdgeDock.TOP,controller.placement().edge);assertTrue(controller.placement().width>controller.placement().height);});
         p=controller.placement();int x=p.x+p.width/2,y=p.height/2;
         step("opening top dock by tap; downward system-bar swipes are OS-reserved");
-        tap(x,y);
+        tap(x,y);if(!controller.isOpen()) inputWindows();
         inst.runOnMainSync(()->assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after swipe; "+controller.gestureStatus()),controller.isOpen()));
     }
 
