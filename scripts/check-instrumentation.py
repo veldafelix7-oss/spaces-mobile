@@ -8,6 +8,9 @@ output=Path(sys.argv[1] if len(sys.argv)>1 else 'emulator-results/instrumentatio
 for image_index,image in enumerate(re.findall(r'INSTRUMENTATION_STATUS: spaces_image=([A-Za-z0-9+/=]+)',output)):
     for part_index,start in enumerate(range(0,len(image),3600)):
         print(f'::notice title=overlay-image-{image_index}-{part_index}::'+image[start:start+3600])
+for diagnostic in re.findall(r'INSTRUMENTATION_STATUS: spaces_diagnostic=(.*)',output):
+    escaped=diagnostic.replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+    print('::notice title=Overlay input diagnostic::'+escaped)
 expected=sum(len(re.findall(r'@Test\b',p.read_text())) for p in Path('app/src/androidTest').rglob('*.java'))
 if expected>0 and re.search(r'OK \('+str(expected)+r' tests\)',output) and 'FAILURES!!!' not in output:
     print(f'::notice title=Android emulator::{expected} instrumentation tests passed on Android 13.')

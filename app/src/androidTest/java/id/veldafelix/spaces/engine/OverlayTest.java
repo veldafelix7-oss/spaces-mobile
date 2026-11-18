@@ -137,9 +137,12 @@ public class OverlayTest {
             java.io.InputStream in=new ParcelFileDescriptor.AutoCloseInputStream(fd)) {
             java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();byte[] b=new byte[4096];int n;
             while((n=in.read(b))!=-1) bytes.write(b,0,n);
-            String log=bytes.toString("UTF-8");
+            String log=bytes.toString("UTF-8").replace('\n','|');
             // Keep each annotation bounded without losing the start of the window dump.
-            for(int i=0;i<Math.min(log.length(),14400);i+=2800) step(label+": "+log.substring(i,Math.min(i+2800,log.length())));
+            for(int i=0;i<Math.min(log.length(),14400);i+=2800) {
+                android.os.Bundle status=new android.os.Bundle();
+                status.putString("spaces_diagnostic",label+": "+log.substring(i,Math.min(i+2800,log.length())));inst.sendStatus(2,status);
+            }
         } catch(Exception e) { step(label+": "+e.getClass().getSimpleName()); }
     }
     private void snapshot(float x,float y) {
