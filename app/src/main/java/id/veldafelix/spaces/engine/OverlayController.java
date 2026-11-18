@@ -144,12 +144,28 @@ public final class OverlayController {
         final String edge=dock.edge;
         boolean top=EdgeDock.TOP.equals(edge),left=EdgeDock.LEFT.equals(edge);
         int pw=Math.min(dp(top?400:280),width()),ph=Math.min(height(),top?dp(300):height());
-        FrameLayout frame=new FrameLayout(c);frame.setContentDescription("spaces-session-panel");
+        FrameLayout frame=new FrameLayout(c) {
+            private boolean closingTouch=false;
+            @Override public boolean dispatchTouchEvent(MotionEvent event) {
+                int action=event.getActionMasked();
+                gestureState="panel action="+action+" x="+event.getX()+" y="+event.getY();
+                if(action==MotionEvent.ACTION_DOWN) {
+                    closingTouch=top?event.getY()>=getHeight()-dp(32):left?event.getX()>=getWidth()-dp(32):event.getX()<=dp(32);
+                }
+                if(closingTouch) {
+                    if(action==MotionEvent.ACTION_UP) { closingTouch=false;main.post(OverlayController.this::close); }
+                    else if(action==MotionEvent.ACTION_CANCEL) closingTouch=false;
+                    return true;
+                }
+                return super.dispatchTouchEvent(event);
+            }
+        };
+        frame.setContentDescription("spaces-session-panel");frame.setClickable(true);
         frame.setBackground(Glass.surface(0xF2FFFFFF,dp(20)));
         ScrollView scroll=new ScrollView(c);scroll.setFillViewport(true);scroll.setVerticalScrollBarEnabled(false);
         FrameLayout.LayoutParams sp=new FrameLayout.LayoutParams(-1,-1);
         // Keep the collapse control outside the scroller so it is always reachable.
-        sp.setMargins(left?dp(12):dp(27),dp(12),left?dp(27):dp(12),top?dp(27):dp(12));frame.addView(scroll,sp);
+        sp.setMargins(left?dp(12):dp(36),dp(12),left?dp(36):dp(12),top?dp(36):dp(12));frame.addView(scroll,sp);
         LinearLayout content=Glass.column(c);scroll.addView(content,new ScrollView.LayoutParams(-1,-2));
         content.addView(Glass.text(c,"spaces : mobile",18,Glass.INK,true));Glass.gap(content,3);
         content.addView(Glass.text(c,store.t("SESI PERMAINAN","GAME SESSION"),9,Glass.MUTED,true));Glass.gap(content,12);

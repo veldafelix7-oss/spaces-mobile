@@ -82,19 +82,25 @@ public class OverlayTest {
         EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);step("panel opened; locating collapse arrow");
         final int[] xy=new int[2];
         inst.runOnMainSync(()->{assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after tap; "+controller.gestureStatus()),controller.isOpen());View arrow=collapse(controller.panelView());assertNotNull(arrow);assertTrue("Collapse control must be laid out",arrow.getWidth()>0 && arrow.getHeight()>0);arrow.getLocationOnScreen(xy);xy[0]+=arrow.getWidth()/2;xy[1]+=arrow.getHeight()/2;});
-        step("tapping collapse arrow at "+xy[0]+","+xy[1]);tap(xy[0],xy[1]);step("collapse tap delivered");inst.runOnMainSync(()->assertFalse(controller.isOpen()));
+        step("tapping collapse arrow at "+xy[0]+","+xy[1]);tap(xy[0],xy[1]);step("collapse tap delivered");inst.runOnMainSync(()->assertFalse("Collapse failed; "+controller.gestureStatus(),controller.isOpen()));
     }
-    @Test public void heldDragSnapsToTopThenDownwardSwipeOpens() {
+    @Test public void heldDragSnapsToTopThenTapOpens() {
         EdgeDock.Placement p=controller.placement();
         int w=activity.getSystemService(android.view.WindowManager.class).getCurrentWindowMetrics().getBounds().width();
         step("dragging handle to top with a held shell swipe");
         input("swipe "+(p.x+p.width/2)+" "+(p.y+p.height/2)+" "+(w/2)+" 2 600");settle();
         inst.runOnMainSync(()->{assertEquals(EdgeDock.TOP,controller.placement().edge);assertTrue(controller.placement().width>controller.placement().height);});
         p=controller.placement();int x=p.x+p.width/2,y=p.height/2;
-        int inward=Math.round(60*activity.getResources().getDisplayMetrics().density);
-        step("opening top dock with downward shell swipe");
-        input("swipe "+x+" "+y+" "+x+" "+(y+inward)+" 80");settle();
+        step("opening top dock by tap; downward system-bar swipes are OS-reserved");
+        tap(x,y);
         inst.runOnMainSync(()->assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after swipe; "+controller.gestureStatus()),controller.isOpen()));
+    }
+
+    @Test public void rightInwardSwipeOpensPanel() {
+        EdgeDock.Placement p=controller.placement();int x=p.x+p.width/2,y=p.y+p.height/2;
+        int inward=Math.round(60*activity.getResources().getDisplayMetrics().density);
+        input("swipe "+x+" "+y+" "+(x-inward)+" "+y+" 80");settle();
+        inst.runOnMainSync(()->assertTrue("Right swipe failed; "+controller.gestureStatus(),controller.isOpen()));
     }
 
 }

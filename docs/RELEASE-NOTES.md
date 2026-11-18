@@ -2,6 +2,7 @@
 
 Follow-up to real Tecno Spark 20C feedback:
 - Thin edge-docked sidebar tab with chevron. Hold and drag to snap left/right/top; top tab becomes horizontal. Edge and normalized position survive rotation/restart; legacy positions migrate.
+- Top-edge downward swipes can be reserved by Android for system bars: tap the top chevron to open. Side edges support inward swipes where the OS delivers them. This app does not bypass mandatory system gestures.
 - Compact session panel with a fixed collapse arrow, outside the scrolling controls; no large Close button. The closed handle is hidden while the panel is open.
 - Entire navigation tiles are touch targets; switching tabs retains the rail instead of rebuilding the full screen.
 - More visible static glass highlights/rims and subtle neutral background contrast. No live blur added.
