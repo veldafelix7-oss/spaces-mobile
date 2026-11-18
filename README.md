@@ -1,1 +1,53 @@
-# spaces-mobile
+# spaces : mobile
+
+Native Android game space for **Tecno Spark 20C (BG7), Android 13 / HiOS 13**, designed around 4 GB physical RAM. Landscape, restrained light glass, almost invisible blue tint. No WebView, Flutter engine, ads, account or analytics.
+
+## Status: 0.1.0 preview, not a proven performance booster
+
+The app is functional groundwork with honest capability boundaries. A command's successful readback is **not** proof of a higher FPS. Testing on the actual BG7 is necessary; emulator results cannot certify HiOS or game compatibility.
+
+### Implemented
+- Initially empty collection; opt in to installed `com.tencent.igfit` (PUBGM FLASH) and `com.netease.newspike` (Blood Strike). Other apps cannot be added; games are not bundled/downloaded.
+- Indonesian/English UI, landscape in both directions, original lightweight vector game scenes and lion emblem.
+- Per-game Eco/Balanced/Performance preferences (Android GameManager) and supported 60/90 Hz display settings, optional through Shizuku. Balanced/System defaults do not force performance settings.
+- Optional Focus mode using Android DND (calls/messages silenced, alarms retained; actual OEM behavior must be verified).
+- Foreground session started only from this app, ongoing stop action, optional usage-based session end (30-second launch grace, 20-second absence grace; sampled every 10 seconds).
+- Movable overlay handle; quick inward swipe/tap opens metrics; drag repositions. No persistent numeric HUD while closed.
+- Real battery temperature, available system RAM, battery level, media-volume control, brightness-settings shortcut, optional explicitly labelled TCP connectivity test.
+- Last 30 local sessions and temperature-over-time chart. Up to 1080 samples per session at 10-second intervals (rolling 3 hours). No invented FPS or 1% low.
+- Durable write-ahead journal, readback and compare-before-restore; preserves externally changed values. Explicit recovery after interruption.
+- Configurable exclusion list, WhatsApp selected by default. **No processes are force-stopped in this version**, so exclusions are stored for future validated controls, not presented as an active cleaner.
+
+### Deliberately not implemented / not validated
+Render downscale (especially HiOS Android 13), SurfaceFlinger FPS capture, process freezing/debloat, AOT compiler controls, per-app firewall, global game EQ, driver switching, touch controls, charging controls, root tuning and thermal bypass. No recording or WhatsApp shortcut. These are **not** quietly simulated.
+
+## Build and install (phone-only friendly)
+
+GitHub Actions → **Android checks & preview APK** → successful run → artifact **spaces-mobile-preview**. Extract the ZIP and install `app-debug.apk` on the phone. Android will request permission for the browser/file manager to install unknown apps. Preview application ID is `id.veldafelix.spaces.preview`.
+
+The CI preview signing key can be kept stable using repository secret `PREVIEW_KEYSTORE_BASE64` (standard Android debug credentials). Without it, runners generate different debug keys; later APKs may not install as updates. Never uninstall to work around this without understanding local data will be lost. A signed release uses a **separate**, private key and application ID.
+
+### Release signing
+The **Signed release APK** manual workflow fails closed unless these private secrets exist:
+- `RELEASE_KEYSTORE_BASE64`
+- `RELEASE_STORE_PASSWORD`
+- `RELEASE_KEY_ALIAS`
+- `RELEASE_KEY_PASSWORD`
+
+Create/back up the signing identity outside Git; use GitHub's encrypted secrets, optionally a protected `release` environment. Do not paste credentials into chat. For a new version increment both `versionCode` and `versionName`; dispatch with the matching `v…` tag. Same ID and signing key are required for in-place updates. Normal non-root installation always requires user confirmation. Preview → production is a separate install, not an in-place update.
+
+Local: JDK 17, Android SDK 35, then `./gradlew testDebugUnitTest lintDebug assembleDebug`. Gradle wrapper is included. Dependencies: Android Gradle Plugin 8.7.3, Shizuku API/provider 13.1.5, JUnit 4.13.2; no backend/API key.
+
+## Phone setup
+1. Install and open; add supported installed games yourself.
+2. Device → grant only permissions for the features you want (overlay, DND, notifications; usage access optional).
+3. For advanced settings, start official Shizuku via wireless debugging, then grant this app access. Usually restart Shizuku after a phone reboot.
+4. Start with Balanced + System refresh. Launch only from Play to start a session.
+5. End via sidebar/notification/app; if interrupted, reopen → Check & recover.
+
+**Do not grant Accessibility or root; neither is requested.** FusiMem is not changed by this app. User device supports +1/+2/+4 GB, currently +4 GB; test separately after reboot.
+
+## Privacy and safety
+Session data and recovery snapshots remain in app-private storage; Android cloud backup is disabled. No automatic network calls. Optional TCP test contacts Cloudflare `1.1.1.1:443`; update and Shizuku links open the browser. TCP timing is not in-match ping. Battery temperature is not CPU temperature. No anti-ban guarantee: game rules still apply. No edits to game files/memory and no thermal protection changes.
+
+See [test plan](docs/TESTING.md), [architecture](docs/ARCHITECTURE.md) and [release notes](docs/RELEASE-NOTES.md).

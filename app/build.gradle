@@ -1,0 +1,42 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'id.veldafelix.spaces'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'id.veldafelix.spaces'
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName '0.1.0'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+    buildFeatures { aidl true; buildConfig true }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    signingConfigs {
+        release {
+            if (System.getenv('SPACES_KEYSTORE')) {
+                storeFile file(System.getenv('SPACES_KEYSTORE'))
+                storePassword System.getenv('SPACES_STORE_PASSWORD')
+                keyAlias System.getenv('SPACES_KEY_ALIAS')
+                keyPassword System.getenv('SPACES_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        debug { applicationIdSuffix '.preview'; versionNameSuffix '-preview' }
+        release {
+            minifyEnabled false
+            if (System.getenv('SPACES_KEYSTORE')) signingConfig signingConfigs.release
+        }
+    }
+    lint { abortOnError true; checkReleaseBuilds true }
+    testOptions { unitTests.returnDefaultValues = true }
+}
+dependencies {
+    implementation 'dev.rikka.shizuku:api:13.1.5'
+    implementation 'dev.rikka.shizuku:provider:13.1.5'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test:rules:1.6.1'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+}
