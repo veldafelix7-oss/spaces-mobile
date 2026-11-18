@@ -105,13 +105,28 @@ public class OverlayTest {
             step(diagnostic.toString());
         } catch(Exception e) { step("Input diagnostic: "+e.getClass().getSimpleName()); }
     }
+    private void snapshot(float x,float y) {
+        android.graphics.Bitmap bitmap=inst.getUiAutomation().takeScreenshot();
+        if(bitmap==null) return;
+        android.graphics.Bitmap image=bitmap.copy(android.graphics.Bitmap.Config.ARGB_8888,true);bitmap.recycle();
+        android.graphics.Canvas canvas=new android.graphics.Canvas(image);android.graphics.Paint paint=new android.graphics.Paint();
+        paint.setColor(android.graphics.Color.RED);paint.setStrokeWidth(5);
+        canvas.drawLine(x-25,y,x+25,y,paint);canvas.drawLine(x,y-25,x,y+25,paint);
+        android.graphics.Bitmap small=android.graphics.Bitmap.createScaledBitmap(image,640,360,true);image.recycle();
+        java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();small.compress(android.graphics.Bitmap.CompressFormat.JPEG,75,bytes);small.recycle();
+        android.os.Bundle status=new android.os.Bundle();status.putString("spaces_image",android.util.Base64.encodeToString(bytes.toByteArray(),android.util.Base64.NO_WRAP));inst.sendStatus(2,status);
+    }
     private void tap(float x,float y) { input("tap "+Math.round(x)+" "+Math.round(y));settle(); }
     @Test public void actualWindowTapsOpenAndCollapsePanel() {
         step("opening by actual handle tap");
         EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);step("panel opened; locating collapse arrow");
         final int[] xy=new int[2];
         inst.runOnMainSync(()->{assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after tap; "+controller.gestureStatus()),controller.isOpen());View arrow=collapse(controller.panelView());assertNotNull(arrow);assertTrue("Collapse control must be laid out",arrow.getWidth()>0 && arrow.getHeight()>0);arrow.getLocationOnScreen(xy);xy[0]+=arrow.getWidth()/2;xy[1]+=arrow.getHeight()/2;});
-        step("tapping collapse arrow at "+xy[0]+","+xy[1]);tap(xy[0],xy[1]);step("collapse tap delivered");if(controller.isOpen()) inputWindows();inst.runOnMainSync(()->assertFalse("Collapse failed; "+controller.gestureStatus(),controller.isOpen()));
+        step("tapping collapse arrow at "+xy[0]+","+xy[1]);tap(xy[0],xy[1]);step("collapse tap delivered");if(controller.isOpen()) {
+            snapshot(xy[0],xy[1]);inputWindows();
+            final int[] origin=new int[2];inst.runOnMainSync(()->{controller.panelView().getLocationOnScreen(origin);step("panel origin="+origin[0]+","+origin[1]+" size="+controller.panelView().getWidth()+"x"+controller.panelView().getHeight());});
+            tap(p.x+p.width/2f,p.y+p.height/2f);step("tap former handle region: "+controller.gestureStatus());
+        }inst.runOnMainSync(()->assertFalse("Collapse failed; "+controller.gestureStatus(),controller.isOpen()));
     }
     @Test public void heldDragSnapsToTopThenDownwardSwipeOpens() {
         EdgeDock.Placement p=controller.placement();

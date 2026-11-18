@@ -3,6 +3,11 @@ from pathlib import Path
 import re
 import sys
 output=Path('emulator-results/instrumentation.txt').read_text()
+# Tiny emulator-only failure screenshots travel through check annotations because
+# redirected artifact downloads are not always accessible to the coding sandbox.
+for image_index,image in enumerate(re.findall(r'INSTRUMENTATION_STATUS: spaces_image=([A-Za-z0-9+/=]+)',output)):
+    for part_index,start in enumerate(range(0,len(image),5500)):
+        print(f'::notice title=overlay-image-{image_index}-{part_index}::'+image[start:start+5500])
 expected=sum(len(re.findall(r'@Test\b',p.read_text())) for p in Path('app/src/androidTest').rglob('*.java'))
 if expected>0 and re.search(r'OK \('+str(expected)+r' tests\)',output) and 'FAILURES!!!' not in output:
     print(f'::notice title=Android emulator::{expected} instrumentation tests passed on Android 13.')
