@@ -17,12 +17,16 @@ public final class EdgeDock {
         }
     }
     public static Placement place(String requested,float offset,int screenWidth,int screenHeight,int thickness,int length) {
+        return place(requested,offset,screenWidth,screenHeight,thickness,length,0);
+    }
+    /** Top tabs sit below the OS-reserved notification/cutout band; side tabs stay flush. */
+    public static Placement place(String requested,float offset,int screenWidth,int screenHeight,int thickness,int length,int topInset) {
         String edge=edge(requested); float f=fraction(offset);
         int sw=Math.max(1,screenWidth),sh=Math.max(1,screenHeight);
         int w=Math.min(sw,TOP.equals(edge)?Math.max(1,length):Math.max(1,thickness));
         int h=Math.min(sh,TOP.equals(edge)?Math.max(1,thickness):Math.max(1,length));
         int x=TOP.equals(edge)?Math.round(f*(sw-w)):LEFT.equals(edge)?0:sw-w;
-        int y=TOP.equals(edge)?0:Math.round(f*(sh-h));
+        int y=TOP.equals(edge)?Math.min(Math.max(0,topInset),sh-h):Math.round(f*(sh-h));
         return new Placement(edge,f,x,y,w,h);
     }
     public static Placement snap(float centerX,float centerY,int sw,int sh,int thickness,int length) {

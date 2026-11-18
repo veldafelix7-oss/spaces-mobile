@@ -42,7 +42,7 @@ public class OverlayTest {
             assertEquals(width,controller.placement().x+controller.placement().width);assertTrue(controller.placement().height>controller.placement().width);});
     }
     @Test public void topDockRotatesAndRestoresPreference() {
-        inst.runOnMainSync(()->{controller.moveTo(EdgeDock.TOP,.6f);assertEquals(0,controller.placement().y);assertTrue(controller.placement().width>controller.placement().height);
+        inst.runOnMainSync(()->{controller.moveTo(EdgeDock.TOP,.6f);assertTrue(controller.placement().y>=0);assertTrue(controller.placement().width>controller.placement().height);
             controller.hide();controller=new OverlayController(activity,()->{});controller.show();assertEquals(EdgeDock.TOP,controller.placement().edge);assertEquals(.6f,controller.placement().fraction,.001f);});
     }
     private View collapse(View v) {
@@ -116,10 +116,10 @@ public class OverlayTest {
     @Test public void heldDragSnapsToTopThenDownwardSwipeOpens() {
         EdgeDock.Placement p=controller.placement();
         int w=activity.getSystemService(android.view.WindowManager.class).getCurrentWindowMetrics().getBounds().width();
-        step("dragging handle to top with a held shell swipe");
+        step("dragging handle to top with a held OS touch stream");
         input("swipe "+(p.x+p.width/2)+" "+(p.y+p.height/2)+" "+(w/2)+" 2 600");settle();
         inst.runOnMainSync(()->{assertEquals(EdgeDock.TOP,controller.placement().edge);assertTrue(controller.placement().width>controller.placement().height);});
-        p=controller.placement();int x=p.x+p.width/2,y=p.height/2;
+        p=controller.placement();int x=p.x+p.width/2,y=p.y+p.height/2;
         step("opening top dock by downward swipe");
         int inward=Math.round(60*activity.getResources().getDisplayMetrics().density);
         input("swipe "+x+" "+y+" "+x+" "+(y+inward)+" 80");settle();if(!controller.isOpen()) inputWindows();

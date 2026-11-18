@@ -17,4 +17,17 @@ public class EdgeDockTest {
         assertTrue(EdgeDock.inwardSwipe("left",30,2,12));assertTrue(EdgeDock.inwardSwipe("right",-30,2,12));assertTrue(EdgeDock.inwardSwipe("top",2,30,12));
         assertFalse(EdgeDock.inwardSwipe("right",30,0,12));assertFalse(EdgeDock.inwardSwipe("top",30,2,12));
     }
+    @Test public void topRespectsReservedSystemBand() {
+        EdgeDock.Placement p=EdgeDock.place("top",.5f,1600,720,18,52,25);
+        assertEquals(25,p.y);assertEquals(18,p.height);assertEquals(52,p.width);
+    }
+    @Test public void topInsetClampsOnTinyDisplays() {
+        assertEquals(0,EdgeDock.place("top",.5f,10,8,18,52,999).y);
+        assertEquals(0,EdgeDock.place("top",.5f,1600,720,18,52,-9).y);
+    }
+    @Test public void sideTabsIgnoreTopInsetAndStayFlush() {
+        EdgeDock.Placement p=EdgeDock.place("right",.4f,1600,720,18,52,25);
+        assertEquals(1600,p.x+p.width);assertEquals(Math.round(.4f*(720-52)),p.y);
+    }
+
 }

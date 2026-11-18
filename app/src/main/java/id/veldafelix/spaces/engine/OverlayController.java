@@ -26,13 +26,14 @@ public final class OverlayController {
     private final Runnable end;
     private DockHandle handle;
     private View panel;
+    private FrameLayout window;
     private WindowManager.LayoutParams hp;
     private EdgeDock.Placement dock;
     private TextView temperature,ram,battery,networkResult;
     private JSONObject sample=new JSONObject();
     private String gestureState="idle";
     private final Handler main=new Handler(Looper.getMainLooper());
-    private boolean hidden=false,testing=false,handleAttached=false;
+    private boolean hidden=false,testing=false,windowAttached=false;
     private static final int MOVE_LEFT=0x01010001,MOVE_RIGHT=0x01010002,MOVE_TOP=0x01010003;
     public OverlayController(Context context,Runnable end) {
         Context app=context.getApplicationContext();
@@ -54,6 +55,12 @@ public final class OverlayController {
         p.setFitInsetsTypes(0);
         return p;
     }
+    private EdgeDock.Placement place(String edge,float offset) {
+        WindowInsets insets=wm.getMaximumWindowMetrics().getWindowInsets();
+        int safeTop=Math.max(insets.getInsetsIgnoringVisibility(WindowInsets.Type.statusBars()|WindowInsets.Type.displayCutout()).top,
+            insets.getInsetsIgnoringVisibility(WindowInsets.Type.mandatorySystemGestures()).top);
+        return EdgeDock.place(edge,offset,width(),height(),dp(18),dp(52),safeTop>0?safeTop+1:0);
+    }
     @SuppressWarnings("ClickableViewAccessibility")
     public void show() {
         if(hidden || handle!=null) return;
@@ -66,7 +73,7 @@ public final class OverlayController {
             EdgeDock.Placement migrated=EdgeDock.snap(store.p.getInt("handle_x",width())+dp(12),store.p.getInt("handle_y",dp(85))+dp(35),width(),height(),dp(18),dp(52));
             edge=migrated.edge;offset=migrated.fraction;
         }
-        dock=EdgeDock.place(edge,offset,width(),height(),dp(18),dp(52));
+        dock=place(edge,offset);
         hp=params(dock.width,dock.height);hp.setTitle("spaces-handle");hp.x=dock.x;hp.y=dock.y;
         handle.direction(dock.edge,false);
         handle.setOnClickListener(v->{gestureState="click";open();});
@@ -113,16 +120,27 @@ public final class OverlayController {
                 }
             }
         });
-        try { wm.addView(handle,hp);handleAttached=true;saveDock(); } catch(Exception ignored) { handle=null; }
+        // One input channel for both states: replacing an overlay ViewRoot can leave
+        // input geometry behind during rotation or an in-flight touch transaction.
+        window=new FrameLayout(c);
+        window.addView(handle,new FrameLayout.LayoutParams(-1,-1));
+        try { wm.addView(window,hp);windowAttached=true;saveDock(); }
+        catch(Exception error) { recordError(error);handle=null;window=null; }
     }
     private void saveDock() { store.p.edit().putString("dock_edge",dock.edge).putFloat("dock_offset",dock.fraction).remove("handle_x").remove("handle_y").apply(); }
-    private void updateHandle() { if(handle!=null && handleAttached) try { wm.updateViewLayout(handle,hp); } catch(Exception ignored) { } }
+    private void updateHandle() { if(handle!=null && windowAttached) try { wm.updateViewLayout(window,hp); } catch(Exception ignored) { } }
     private void applyDock(EdgeDock.Placement p,boolean save) {
         dock=p;hp.x=p.x;hp.y=p.y;hp.width=p.width;hp.height=p.height;
         if(handle!=null) handle.direction(p.edge,false);updateHandle();if(save) saveDock();
     }
-    void moveTo(String edge,float offset) { if(handle!=null && panel==null) applyDock(EdgeDock.place(edge,offset,width(),height(),dp(18),dp(52)),true); }
-    private void snap(float x,float y) { applyDock(EdgeDock.snap(x,y,width(),height(),dp(18),dp(52)),true); }
+    void moveTo(String edge,float offset) { if(handle!=null && panel==null) applyDock(place(edge,offset),true); }
+    private void snap(float x,float y) {
+        EdgeDock.Placement p=EdgeDock.snap(x,y,width(),height(),dp(18),dp(52));
+        applyDock(place(p.edge,p.fraction),true);
+    }
+    private void recordError(Exception error) {
+        store.p.edit().putString("overlay_error",error.getClass().getSimpleName()+": "+error.getMessage()).apply();
+    }
     EdgeDock.Placement placement() { return dock; }
     View handleView() { return handle; }
     View panelView() { return panel; }
@@ -195,16 +213,22 @@ public final class OverlayController {
         WindowManager.LayoutParams p=params(pw,ph);p.setTitle("spaces-panel");p.x=top?Math.max(0,Math.min(width()-pw,dock.x+dock.width/2-pw/2)):left?0:width()-pw;p.y=0;
         panel=frame;
         try {
-            wm.addView(panel,p);
-            // Detach the tab window instead of leaving an invisible overlay that may retain
-            // an input/obscuring region on OEM window managers.
-            if(handleAttached) { wm.removeViewImmediate(handle);handleAttached=false; }
+            window.removeAllViews();window.addView(panel,new FrameLayout.LayoutParams(-1,-1));
+            wm.updateViewLayout(window,p);
+            store.p.edit().remove("overlay_error").apply();
         } catch(Exception error) {
-            store.p.edit().putString("overlay_error",error.getClass().getSimpleName()+": "+error.getMessage()).apply();
-            if(panel!=null) try { wm.removeViewImmediate(panel); } catch(Exception ignoredAgain) { }
-            gestureState="open failed: "+error.getClass().getSimpleName();panel=null;clearMetrics();
+            recordError(error);gestureState="open failed: "+error.getClass().getSimpleName();
+            panel=null;clearMetrics();restoreHandle();
         }
     }
+    private void restoreHandle() {
+        if(window==null || handle==null || !windowAttached || hidden) return;
+        try {
+            window.removeAllViews();window.addView(handle,new FrameLayout.LayoutParams(-1,-1));
+            wm.updateViewLayout(window,hp);
+        } catch(Exception error) { recordError(error); }
+    }
+
     private void testNetwork() {
         if(testing || networkResult==null) return;testing=true;
         TextView result=networkResult;result.setText(store.t("Mengukur koneksi TCP…","Measuring TCP connection…"));
@@ -217,11 +241,13 @@ public final class OverlayController {
     }
     private void clearMetrics() { temperature=null;ram=null;battery=null;networkResult=null; }
     void close() {
-        if(panel!=null) try { wm.removeView(panel); } catch(Exception ignored) { } finally { panel=null;clearMetrics(); }
-        if(handle!=null && !hidden && !handleAttached) try { wm.addView(handle,hp);handleAttached=true; } catch(Exception ignored) { }
+        if(panel==null) return;
+        panel=null;clearMetrics();restoreHandle();
     }
     public void hide() {
-        hidden=true;close();main.removeCallbacksAndMessages(null);
-        if(handle!=null) try { if(handleAttached) wm.removeViewImmediate(handle); } catch(Exception ignored) { } finally { handle=null;handleAttached=false; }
+        hidden=true;main.removeCallbacksAndMessages(null);
+        if(window!=null && windowAttached) try { wm.removeViewImmediate(window); } catch(Exception error) { recordError(error); }
+        finally { windowAttached=false; }
+        window=null;handle=null;panel=null;clearMetrics();
     }
 }
