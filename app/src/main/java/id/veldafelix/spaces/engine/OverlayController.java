@@ -30,6 +30,7 @@ public final class OverlayController {
     private EdgeDock.Placement dock;
     private TextView temperature,ram,battery,networkResult;
     private JSONObject sample=new JSONObject();
+    private String gestureState="idle";
     private final Handler main=new Handler(Looper.getMainLooper());
     private boolean hidden=false,testing=false,handleAttached=false;
     private static final int MOVE_LEFT=0x01010001,MOVE_RIGHT=0x01010002,MOVE_TOP=0x01010003;
@@ -66,7 +67,7 @@ public final class OverlayController {
         dock=EdgeDock.place(edge,offset,width(),height(),dp(18),dp(52));
         hp=params(dock.width,dock.height);hp.x=dock.x;hp.y=dock.y;
         handle.direction(dock.edge,false);
-        handle.setOnClickListener(v->open());
+        handle.setOnClickListener(v->{gestureState="click";open();});
         handle.setAccessibilityDelegate(new View.AccessibilityDelegate() {
             @Override public void onInitializeAccessibilityNodeInfo(View host,AccessibilityNodeInfo info) {
                 super.onInitializeAccessibilityNodeInfo(host,info);
@@ -85,6 +86,7 @@ public final class OverlayController {
             @Override public boolean onTouch(View v,android.view.MotionEvent e) {
                 switch(e.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
+                        gestureState="down";
                         sx=e.getRawX();sy=e.getRawY();ox=hp.x;oy=hp.y;down=e.getEventTime();dragging=false;v.setPressed(true);return true;
                     case MotionEvent.ACTION_MOVE:
                         float dx=e.getRawX()-sx,dy=e.getRawY()-sy;
@@ -94,6 +96,7 @@ public final class OverlayController {
                         }
                         return true;
                     case MotionEvent.ACTION_UP:
+                        gestureState="up drag="+dragging+" dx="+(e.getRawX()-sx)+" dy="+(e.getRawY()-sy);
                         v.setPressed(false);
                         if(dragging) snap(hp.x+hp.width/2f,hp.y+hp.height/2f);
                         else if(Math.hypot(e.getRawX()-sx,e.getRawY()-sy)<=slop || EdgeDock.inwardSwipe(dock.edge,e.getRawX()-sx,e.getRawY()-sy,dp(12))) {
@@ -102,6 +105,7 @@ public final class OverlayController {
                         }
                         return true;
                     case MotionEvent.ACTION_CANCEL:
+                        gestureState="cancelled by window/system";
                         v.setPressed(false);applyDock(dock,false);return true;
                     default:return true;
                 }
@@ -120,6 +124,7 @@ public final class OverlayController {
     EdgeDock.Placement placement() { return dock; }
     View handleView() { return handle; }
     View panelView() { return panel; }
+    String gestureStatus() { return gestureState; }
     public boolean isOpen() { return panel!=null; }
     public void update(JSONObject point) { sample=point;renderMetrics(); }
     private void renderMetrics() {
@@ -179,7 +184,7 @@ public final class OverlayController {
         } catch(Exception error) {
             store.p.edit().putString("overlay_error",error.getClass().getSimpleName()+": "+error.getMessage()).apply();
             if(panel!=null) try { wm.removeViewImmediate(panel); } catch(Exception ignoredAgain) { }
-            panel=null;clearMetrics();
+            gestureState="open failed: "+error.getClass().getSimpleName();panel=null;clearMetrics();
         }
     }
     private void testNetwork() {
