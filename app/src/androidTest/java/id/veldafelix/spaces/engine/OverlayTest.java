@@ -61,9 +61,12 @@ public class OverlayTest {
         inst.runOnMainSync(()->{controller.hide();new Store(c).p.edit().remove("dock_edge").remove("dock_offset").putInt("handle_x",99999).putInt("handle_y",99999).commit();
             controller=new OverlayController(activity,()->{});controller.show();assertNotNull(controller.handleView());assertTrue(controller.placement().x>=0);assertTrue(controller.placement().y>=0);assertTrue(new Store(c).p.contains("dock_edge"));assertFalse(new Store(c).p.contains("handle_x"));});
     }
+    private void step(String message) {
+        android.os.Bundle status=new android.os.Bundle();status.putString("spaces_step",message);inst.sendStatus(2,status);
+    }
     private void pointer(int action,long down,long at,float x,float y) {
         android.view.MotionEvent e=android.view.MotionEvent.obtain(down,at,action,x,y,0);
-        e.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);assertTrue(inst.getUiAutomation().injectInputEvent(e,true));e.recycle();
+        e.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);inst.sendPointerSync(e);e.recycle();
     }
     private void settle() {
         // A queued UI-frame latch is bounded; waiting for a globally idle accessibility stream
@@ -79,10 +82,11 @@ public class OverlayTest {
         pointer(android.view.MotionEvent.ACTION_UP,now,android.os.SystemClock.uptimeMillis(),x,y);settle();
     }
     @Test public void actualWindowTapsOpenAndCollapsePanel() {
-        EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);
+        step("opening by actual handle tap");
+        EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);step("panel opened; locating collapse arrow");
         final int[] xy=new int[2];
         inst.runOnMainSync(()->{assertTrue(controller.isOpen());View arrow=collapse(controller.panelView());assertNotNull(arrow);assertTrue("Collapse control must be laid out",arrow.getWidth()>0 && arrow.getHeight()>0);arrow.getLocationOnScreen(xy);xy[0]+=arrow.getWidth()/2;xy[1]+=arrow.getHeight()/2;});
-        tap(xy[0],xy[1]);inst.runOnMainSync(()->assertFalse(controller.isOpen()));
+        step("tapping collapse arrow at "+xy[0]+","+xy[1]);tap(xy[0],xy[1]);step("collapse tap delivered");inst.runOnMainSync(()->assertFalse(controller.isOpen()));
     }
     @Test public void heldDragSnapsToTopThenDownwardSwipeOpens() {
         EdgeDock.Placement p=controller.placement();long down=android.os.SystemClock.uptimeMillis();
