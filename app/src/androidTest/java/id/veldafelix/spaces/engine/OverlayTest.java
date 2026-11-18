@@ -81,7 +81,12 @@ public class OverlayTest {
             java.io.InputStream in=new ParcelFileDescriptor.AutoCloseInputStream(fd)) {
             java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();byte[] b=new byte[4096];int n;
             while((n=in.read(b))!=-1) bytes.write(b,0,n);
-            for(String line:bytes.toString("UTF-8").split("\n")) if((line.contains("spaces-handle")||line.contains("spaces-panel")) && line.contains("frame=")) step(line.trim().substring(0,Math.min(1000,line.trim().length())));
+            StringBuilder diagnostic=new StringBuilder();int count=0;
+            for(String line:bytes.toString("UTF-8").split("\n")) {
+                if(line.contains("frame=") && count++<8) diagnostic.append(line.trim()).append(" | ");
+                if(line.contains("displayId=0") && (line.contains("rotation=")||line.contains("orientation="))) diagnostic.append(line.trim()).append(" | ");
+            }
+            step(diagnostic.toString());
         } catch(Exception e) { step("Input diagnostic: "+e.getClass().getSimpleName()); }
     }
     private void tap(float x,float y) { input("tap "+Math.round(x)+" "+Math.round(y));settle(); }
