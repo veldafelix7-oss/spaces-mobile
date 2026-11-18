@@ -43,6 +43,7 @@ public class OverlayTest {
         activity=(MainActivity)inst.startActivitySync(new Intent(c,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));inst.waitForIdleSync();
         shell("appops set "+c.getPackageName()+" SYSTEM_ALERT_WINDOW allow");
         assertTrue(android.provider.Settings.canDrawOverlays(c));
+        acknowledgeFullscreenTutorial();
         awaitActivityFocus();
         inst.runOnMainSync(()->{controller=new OverlayController(activity,()->{});controller.show();});settle();
     }
@@ -51,6 +52,41 @@ public class OverlayTest {
     }
     @AfterClass public static void restoreDisplayRotation() {
         InstrumentationRegistry.getInstrumentation().getUiAutomation().setRotation(android.app.UiAutomation.ROTATION_UNFREEZE);
+    }
+    private void acknowledgeFullscreenTutorial() {
+        // Android's first-use immersive cling is a trusted, focusable system window.
+        // It appears after the activity's initial focus and can consume a later panel
+        // tap. Acknowledge ONLY its framework OK button, before creating the overlay;
+        // never change secure settings, inject an extra panel tap or bypass app input.
+        android.accessibilityservice.AccessibilityServiceInfo info=inst.getUiAutomation().getServiceInfo();
+        int originalFlags=info.flags;
+        info.flags|=android.accessibilityservice.AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS;
+        inst.getUiAutomation().setServiceInfo(info);
+        try {
+            long deadline=android.os.SystemClock.uptimeMillis()+6000,stableSince=0;
+            while(android.os.SystemClock.uptimeMillis()<deadline) {
+                android.view.accessibility.AccessibilityNodeInfo root=inst.getUiAutomation().getRootInActiveWindow();
+                if(root!=null && "android".contentEquals(root.getPackageName()==null?"":root.getPackageName())) {
+                    java.util.List<android.view.accessibility.AccessibilityNodeInfo> buttons=root.findAccessibilityNodeInfosByViewId("android:id/ok");
+                    for(android.view.accessibility.AccessibilityNodeInfo button:buttons) {
+                        if(button.isClickable() && button.isVisibleToUser()) {
+                            step("acknowledging framework fullscreen tutorial before overlay creation");
+                            assertTrue("Fullscreen tutorial acknowledgement rejected",button.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK));
+                        }
+                    }
+                    stableSince=0;
+                } else if(ui(()->activity.hasWindowFocus())) {
+                    long now=android.os.SystemClock.uptimeMillis();
+                    if(stableSince==0) stableSince=now;
+                    // The framework posts its cling after entering immersive mode.
+                    if(now-stableSince>=2000) return;
+                } else stableSince=0;
+                android.os.SystemClock.sleep(50);
+            }
+            inputWindows();fail("Fullscreen tutorial/activity setup did not settle before overlay creation");
+        } finally {
+            info.flags=originalFlags;inst.getUiAutomation().setServiceInfo(info);
+        }
     }
     private void awaitActivityFocus() {
         long deadline=android.os.SystemClock.uptimeMillis()+4000;final boolean[] focused={false};
