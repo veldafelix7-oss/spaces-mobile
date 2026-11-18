@@ -73,42 +73,48 @@ public class AppSmokeTest {
             byte[] buffer=new byte[1024]; while(in.read(buffer)!=-1) { }
         }
     }
+    private void setDnd(android.app.NotificationManager n,int mode) throws Exception {
+        n.setInterruptionFilter(mode);
+        long deadline=android.os.SystemClock.elapsedRealtime()+3000;
+        while(n.getCurrentInterruptionFilter()!=mode && android.os.SystemClock.elapsedRealtime()<deadline) Thread.sleep(25);
+        assertEquals("Wait for Android DND transition",mode,n.getCurrentInterruptionFilter());
+    }
     @Test public void focusJournalAppliesAndRestoresRealAndroidDnd() throws Exception {
         android.app.NotificationManager n=context.getSystemService(android.app.NotificationManager.class);
         shell("cmd notification allow_dnd "+context.getPackageName());
         assertTrue(n.isNotificationPolicyAccessGranted()); int old=n.getCurrentInterruptionFilter();
         try {
-            n.setInterruptionFilter(android.app.NotificationManager.INTERRUPTION_FILTER_ALL);
+            setDnd(n,android.app.NotificationManager.INTERRUPTION_FILTER_ALL);
             Engine e=new Engine(context); e.applyProfile("com.tencent.igfit");
             assertTrue(e.pending());
             assertEquals(android.app.NotificationManager.INTERRUPTION_FILTER_ALARMS,n.getCurrentInterruptionFilter());
             Engine recreated=new Engine(context); assertTrue(recreated.pending()); recreated.restore();
             assertFalse(recreated.pending());
             assertEquals(android.app.NotificationManager.INTERRUPTION_FILTER_ALL,n.getCurrentInterruptionFilter());
-        } finally { n.setInterruptionFilter(old); shell("cmd notification disallow_dnd "+context.getPackageName()); }
+        } finally { setDnd(n,old); shell("cmd notification disallow_dnd "+context.getPackageName()); }
     }
     @Test public void recoveryPreservesAnExternalDndChange() throws Exception {
         android.app.NotificationManager n=context.getSystemService(android.app.NotificationManager.class);
         shell("cmd notification allow_dnd "+context.getPackageName()); int old=n.getCurrentInterruptionFilter();
         try {
-            n.setInterruptionFilter(android.app.NotificationManager.INTERRUPTION_FILTER_ALL);
+            setDnd(n,android.app.NotificationManager.INTERRUPTION_FILTER_ALL);
             Engine e=new Engine(context); e.applyProfile("com.tencent.igfit");
-            n.setInterruptionFilter(android.app.NotificationManager.INTERRUPTION_FILTER_NONE);
+            setDnd(n,android.app.NotificationManager.INTERRUPTION_FILTER_NONE);
             e.restore(); assertFalse(e.pending());
             assertEquals(android.app.NotificationManager.INTERRUPTION_FILTER_NONE,n.getCurrentInterruptionFilter());
-        } finally { n.setInterruptionFilter(old); shell("cmd notification disallow_dnd "+context.getPackageName()); }
+        } finally { setDnd(n,old); shell("cmd notification disallow_dnd "+context.getPackageName()); }
     }
     @Test public void revokedDndAccessKeepsJournalForRetry() throws Exception {
         android.app.NotificationManager n=context.getSystemService(android.app.NotificationManager.class);
         shell("cmd notification allow_dnd "+context.getPackageName()); int old=n.getCurrentInterruptionFilter();
         try {
-            n.setInterruptionFilter(android.app.NotificationManager.INTERRUPTION_FILTER_ALL);
+            setDnd(n,android.app.NotificationManager.INTERRUPTION_FILTER_ALL);
             Engine e=new Engine(context); e.applyProfile("com.tencent.igfit");
             shell("cmd notification disallow_dnd "+context.getPackageName());
             e.restore(); assertTrue(e.pending());
             shell("cmd notification allow_dnd "+context.getPackageName());
             e.restore(); assertFalse(e.pending());
-        } finally { shell("cmd notification allow_dnd "+context.getPackageName()); n.setInterruptionFilter(old); shell("cmd notification disallow_dnd "+context.getPackageName()); }
+        } finally { shell("cmd notification allow_dnd "+context.getPackageName()); setDnd(n,old); shell("cmd notification disallow_dnd "+context.getPackageName()); }
     }
     @Test public void foregroundSessionStartsOnceAndEndsWithHistory() throws Exception {
         Store store=new Store(context);
