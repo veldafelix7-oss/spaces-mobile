@@ -96,7 +96,10 @@ public final class OverlayController {
                     case MotionEvent.ACTION_UP:
                         v.setPressed(false);
                         if(dragging) snap(hp.x+hp.width/2f,hp.y+hp.height/2f);
-                        else if(Math.hypot(e.getRawX()-sx,e.getRawY()-sy)<=slop || EdgeDock.inwardSwipe(dock.edge,e.getRawX()-sx,e.getRawY()-sy,dp(12))) v.performClick();
+                        else if(Math.hypot(e.getRawX()-sx,e.getRawY()-sy)<=slop || EdgeDock.inwardSwipe(dock.edge,e.getRawX()-sx,e.getRawY()-sy,dp(12))) {
+                            // Finish ACTION_UP before replacing its overlay window/input channel.
+                            main.post(()->{if(!hidden && handle==v) v.performClick();});
+                        }
                         return true;
                     case MotionEvent.ACTION_CANCEL:
                         v.setPressed(false);applyDock(dock,false);return true;
@@ -173,7 +176,11 @@ public final class OverlayController {
             // Detach the tab window instead of leaving an invisible overlay that may retain
             // an input/obscuring region on OEM window managers.
             if(handleAttached) { wm.removeViewImmediate(handle);handleAttached=false; }
-        } catch(Exception ignored) { if(panel!=null) try { wm.removeViewImmediate(panel); } catch(Exception ignoredAgain) { } panel=null;clearMetrics(); }
+        } catch(Exception error) {
+            store.p.edit().putString("overlay_error",error.getClass().getSimpleName()+": "+error.getMessage()).apply();
+            if(panel!=null) try { wm.removeViewImmediate(panel); } catch(Exception ignoredAgain) { }
+            panel=null;clearMetrics();
+        }
     }
     private void testNetwork() {
         if(testing || networkResult==null) return;testing=true;

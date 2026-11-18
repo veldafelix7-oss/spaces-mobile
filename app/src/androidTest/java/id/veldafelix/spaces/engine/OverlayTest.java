@@ -81,7 +81,7 @@ public class OverlayTest {
         step("opening by actual handle tap");
         EdgeDock.Placement p=controller.placement();tap(p.x+p.width/2f,p.y+p.height/2f);step("panel opened; locating collapse arrow");
         final int[] xy=new int[2];
-        inst.runOnMainSync(()->{assertTrue(controller.isOpen());View arrow=collapse(controller.panelView());assertNotNull(arrow);assertTrue("Collapse control must be laid out",arrow.getWidth()>0 && arrow.getHeight()>0);arrow.getLocationOnScreen(xy);xy[0]+=arrow.getWidth()/2;xy[1]+=arrow.getHeight()/2;});
+        inst.runOnMainSync(()->{assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after tap"),controller.isOpen());View arrow=collapse(controller.panelView());assertNotNull(arrow);assertTrue("Collapse control must be laid out",arrow.getWidth()>0 && arrow.getHeight()>0);arrow.getLocationOnScreen(xy);xy[0]+=arrow.getWidth()/2;xy[1]+=arrow.getHeight()/2;});
         step("tapping collapse arrow at "+xy[0]+","+xy[1]);tap(xy[0],xy[1]);step("collapse tap delivered");inst.runOnMainSync(()->assertFalse(controller.isOpen()));
     }
     @Test public void heldDragSnapsToTopThenDownwardSwipeOpens() {
@@ -94,7 +94,7 @@ public class OverlayTest {
         int inward=Math.round(60*activity.getResources().getDisplayMetrics().density);
         step("opening top dock with downward shell swipe");
         input("swipe "+x+" "+y+" "+x+" "+(y+inward)+" 80");settle();
-        inst.runOnMainSync(()->assertTrue(controller.isOpen()));
+        inst.runOnMainSync(()->assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after swipe"),controller.isOpen()));
     }
 
 }
