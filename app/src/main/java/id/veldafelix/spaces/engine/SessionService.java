@@ -19,6 +19,7 @@ public final class SessionService extends Service {
     private final SessionExitMonitor exitMonitor=new SessionExitMonitor();
     private boolean autoEnd;
     private int overlayRepairAttempts=0;
+    private long overlayAttachAt;
     private JSONArray samples=new JSONArray();
     private final Handler main=new Handler(Looper.getMainLooper());
     private OverlayController overlay;
@@ -56,7 +57,7 @@ public final class SessionService extends Service {
         }
         if(RESTORE_OVERLAY.equals(intent.getAction())) {
             if(running && initialized && !ending && !destroyed) {
-                overlayRepairAttempts=0;attachOverlay();SessionDiagnostics.note(this,overlay!=null && overlay.isAttached()?"overlay_restored":"overlay_restore_failed");
+                overlayRepairAttempts=0;attachOverlay(true);
             } else if(!running) stopSelf();
             return START_NOT_STICKY;
         }
@@ -88,7 +89,7 @@ public final class SessionService extends Service {
             finally { main.post(()->{
                 // A service stopped during profile work must not create a ghost overlay/READY event.
                 if(ending || destroyed) return;
-                initialized=true;attachOverlay();SessionDiagnostics.note(this,"running");
+                initialized=true;attachOverlay(false);SessionDiagnostics.note(this,"running");
                 sendBroadcast(new Intent(READY).setPackage(getPackageName()).putExtra("game",game));
                 tick.run();
             }); }
@@ -98,12 +99,22 @@ public final class SessionService extends Service {
     private void overlayStatus(String status) {
         if(!status.equals(store.p.getString("session_overlay_status",""))) store.p.edit().putString("session_overlay_status",status).apply();
     }
-    private void attachOverlay() {
+    private void attachOverlay(boolean userRequested) {
         if(overlay!=null) { overlay.hide();overlay=null; }
-        if(!store.p.getBoolean("overlay",true)) { overlayStatus("disabled");return; }
-        if(!android.provider.Settings.canDrawOverlays(this)) { overlayStatus("permission_missing");return; }
-        overlay=new OverlayController(this,()->end("manual"));overlay.show();
-        overlayStatus(overlay.isAttached()?"attached":"attach_failed");
+        if(!store.p.getBoolean("overlay",true) || !android.provider.Settings.canDrawOverlays(this)) {
+            overlayStatus(store.p.getBoolean("overlay",true)?"permission_missing":"disabled");
+            if(userRequested) SessionDiagnostics.note(this,"overlay_restore_failed");return;
+        }
+        overlay=new OverlayController(this,()->end("manual"));overlayAttachAt=SystemClock.elapsedRealtime();overlay.show();
+        final OverlayController requested=overlay;
+        if(!requested.hasWindow()) {
+            overlayStatus("attach_failed");if(userRequested) SessionDiagnostics.note(this,"overlay_restore_failed");return;
+        }
+        overlayStatus("attaching");
+        requested.whenAttached(()->{
+            if(destroyed || ending || overlay!=requested) return;
+            overlayStatus("attached");if(userRequested) SessionDiagnostics.note(this,"overlay_restored");
+        });
     }
     private void checkOverlay() {
         if(!store.p.getBoolean("overlay",true) || !android.provider.Settings.canDrawOverlays(this)) {
@@ -111,9 +122,11 @@ public final class SessionService extends Service {
             overlayStatus(store.p.getBoolean("overlay",true)?"permission_missing":"disabled");return;
         }
         if(overlay!=null && overlay.isAttached()) { overlayStatus("attached");return; }
+        // addView can succeed before the first ViewRoot traversal attaches its View.
+        if(overlay!=null && overlay.hasWindow() && SystemClock.elapsedRealtime()-overlayAttachAt<2000) return;
         // One bounded repair of an actually detached view, not an attempt to bypass
         // a game's/system's hide-overlay policy or to restart a dead process.
-        if(overlayRepairAttempts<1) { overlayRepairAttempts++;attachOverlay(); }
+        if(overlayRepairAttempts<1) { overlayRepairAttempts++;attachOverlay(false); }
     }
     private void end(String reason) {
         if(ending || destroyed) return;ending=true;main.removeCallbacks(tick);
@@ -137,7 +150,7 @@ public final class SessionService extends Service {
     }
     @Override public void onConfigurationChanged(android.content.res.Configuration config) {
         super.onConfigurationChanged(config);
-        if(initialized && !ending && !destroyed) { overlayRepairAttempts=0;attachOverlay(); }
+        if(initialized && !ending && !destroyed) { overlayRepairAttempts=0;attachOverlay(false); }
     }
     @Override public void onTaskRemoved(Intent rootIntent) {
         if(!ending && initialized) SessionDiagnostics.note(this,"task_removed");
