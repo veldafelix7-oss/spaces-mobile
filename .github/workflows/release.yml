@@ -35,6 +35,13 @@ jobs:
           SPACES_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           SPACES_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: python3 scripts/ci-build.py testReleaseUnitTest lintRelease assembleRelease
+      # Even a manually signed release must not silently create a third app or
+      # replace preview2 with an incompatible signing key.
+      - name: Verify installed-app update compatibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APK_PATH: app/build/outputs/apk/release/app-release.apk
+        run: bash scripts/check-preview-signing.sh
       - name: Publish APK with checksum
         env:
           GH_TOKEN: ${{ github.token }}

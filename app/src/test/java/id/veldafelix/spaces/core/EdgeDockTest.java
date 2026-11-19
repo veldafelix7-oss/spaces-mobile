@@ -43,7 +43,8 @@ public class EdgeDockTest {
     }
     @Test public void topOriginClampsBadInsets() {
         assertEquals(0,EdgeDock.topOrigin(-10,-20,-30,-12));
-        assertEquals(1,EdgeDock.topOrigin(0,0,1,1));
+        // With a one-pixel glyph, integer center is 0; origin must be past pixel 1.
+        assertEquals(2,EdgeDock.topOrigin(0,0,1,1));
     }
 
 }

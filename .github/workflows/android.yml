@@ -24,7 +24,7 @@ jobs:
         with:
           path: ~/.android/debug.keystore
           key: spaces-preview-debug-identity-v1
-      - name: Restore stable preview signing identity
+      - name: Restore available preview key (certificate checked separately)
         env:
           PREVIEW_KEYSTORE: ${{ secrets.PREVIEW_KEYSTORE_BASE64 }}
         run: |

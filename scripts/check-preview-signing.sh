@@ -8,7 +8,7 @@ mkdir -p "$DIRECTORY"
 gh release download "$BASELINE" --repo "$GITHUB_REPOSITORY" --pattern spaces-mobile-preview.apk --dir "$DIRECTORY" --clobber
 TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -name apksigner | sort -V | tail -1 | xargs dirname)"
 OLD="$DIRECTORY/spaces-mobile-preview.apk"
-NEW=app/build/outputs/apk/debug/app-debug.apk
+NEW="${APK_PATH:-app/build/outputs/apk/debug/app-debug.apk}"
 old_info=$("$TOOLS/apksigner" verify --print-certs "$OLD")
 new_info=$("$TOOLS/apksigner" verify --print-certs "$NEW")
 old_cert=$(printf '%s\n' "$old_info" | sed -n 's/^Signer #[0-9]* certificate SHA-256 digest: //p')
