@@ -4,7 +4,8 @@
 - JVM: command allowlist, injection rejection, bounds, package restrictions, mode parsing, launch/exit grace, compare-before-restore.
 - Android lint and debug compilation; instrumentation APK compilation.
 - Two consecutive complete instrumentation suites per emulator job, fail-closed with no retry after a failure. Only draft candidates are created automatically; publication requires manual review. All identity and replacement/data checks must pass as well.
-- Compare against installed 0.1.1's signing certificate, require the same package and higher versionCode; then test actual `adb install -r` with private file/preferences retention and unchanged package count. This real replacement path is currently blocked by a certificate mismatch, NOT verified. See [signing status](UPDATE-IDENTITY.md).
+- Restore only the privately backed-up key matching `config/preview-identity.json`. Missing/wrong secrets must block signing; no generated fallback. Debug/release retain the existing preview2 package and same key.
+- For the exact user-approved reset version (0.1.2/code 3), prove old-key update rejection before a clean reset **on the CI emulator only**, then a same-key higher-version 3→4 probe with private file/preferences retention and unchanged package list. Any reset without exact policy approval or outside a CI emulator must fail. This actual new-key path is pending the owner's signing secret, **NOT yet verified**. See [signing setup](UPDATE-IDENTITY.md).
 - Unreleased 0.1.2: 49 JVM tests and four 27-test Android suites passed across two builds. Added native top-glyph first-touch and inset-adaptation tests. Overall pipelines failed identity; no release. Signing/data gate success/failure cases have local mock tests only.
 - Overlay setup acknowledges Android's first-use fullscreen tutorial before creating the overlay. It then checks stable activity focus, and the open panel's input focus. Actual first open/collapse, held drag, all-dock repeated glyph cycles, media touch and Back remain OS-input assertions. No system settings are used to disable the tutorial and no missed app tap is retried.
 - Verified source `82e5e54`: two independent emulator runs each passed 45 JVM tests and both 25-test Android suites. See [results](TEST-RESULTS.md) for exact runs and earlier failed candidates.
@@ -22,7 +23,8 @@ For every row record pass/fail, actual result, app version and date. Never recor
 - [ ] Add only installed Flash/Blood Strike; reject other apps/missing games; remove/re-add persists.
 - [ ] Force-close/reopen maintains profiles.
 - [ ] 0.1.1 isolated preview installs alongside 0.1.0; old data stays present, new collection/permissions configured separately. End/recover old sessions first.
-- [ ] Same-key higher-version APK updates without losing local settings. Wrong key fails safely. Preview and release separate.
+- [ ] After the one-time user-approved reset, same-key higher-version APK updates retain local settings; wrong key fails safely. Debug/release must not add different application IDs. Current 0.1.1 cannot directly update to the new key.
+- [ ] Before reset/uninstall, all old sessions are ended and recovery is complete. Fresh data/no import is expected only after the approved reset; never erase an active recovery journal. [Phone checklist](PHONE-RESET.md).
 
 ### Permissions and session lifecycle
 - [ ] Deny each optional permission: no crash, feature is accurately labelled unavailable.

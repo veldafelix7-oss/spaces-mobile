@@ -4,7 +4,7 @@ Native Android game space for **Tecno Spark 20C (BG7), Android 13 / HiOS 13**, d
 
 ## Download and verified checks
 
-**Latest work: 0.1.2 is NOT released.** The closer top-tab positioning passed 49 JVM tests and four 27-test Android suites, but the candidate signing certificate differs from the installed 0.1.1. Publication is blocked; this is not a usable in-place update. No third app is being offered, and no uninstall/data clearing is requested. [Signing evidence and required recovery](docs/UPDATE-IDENTITY.md) · [test results](docs/TEST-RESULTS.md).
+**Latest work: 0.1.2 is NOT released.** The user approved a one-time fresh start (phone only). A new fixed signing key is privately backed up, and both preview/release retain the existing `preview2` package. The remaining setup is the owner's private GitHub Actions secret; no signed APK will be built with a temporary fallback key. [Signing setup](docs/UPDATE-IDENTITY.md) · [phone-only reset checklist](docs/PHONE-RESET.md) · [test results](docs/TEST-RESULTS.md). **Do not uninstall until the new APK has passed the actual installation tests and is available.**
 
 [Download 0.1.1 Android 13 preview APK (~2.6 MB)](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.1-82e5e54/spaces-mobile-preview.apk) · [Release + checksum](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.1-82e5e54)
 

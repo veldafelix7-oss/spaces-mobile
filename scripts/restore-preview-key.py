@@ -28,6 +28,8 @@ def restore():
         value = bundle.get(field, '')
         if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z0-9_-]{12,128}' if field != 'alias' else r'[A-Za-z0-9_-]{1,64}', value):
             raise ValueError('Signing bundle contains an invalid credential field')
+    if bundle['store_password'] != bundle['key_password']:
+        raise ValueError('PKCS12 store/key passwords must match the backed-up bundle')
     try:
         data = base64.b64decode(bundle.get('keystore_base64', ''), validate=True)
     except (ValueError, TypeError):

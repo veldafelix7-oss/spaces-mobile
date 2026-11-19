@@ -21,14 +21,15 @@ with tempfile.TemporaryDirectory() as temp:
         assert result.returncode==0, 'Temporary test fixture could not be created'
     cert=hashlib.sha256((root/'cert.der').read_bytes()).hexdigest()
     bundle={'schema':1,'package':'id.veldafelix.spaces.preview2','alias':'fixture','store_password':password,'key_password':password,'certificate_sha256':cert,'keystore_base64':base64.b64encode(key.read_bytes()).decode()}
-    for case in ['success','missing','invalid-json','wrong-certificate','wrong-package','bad-password','invalid-keystore','existing-key']:
+    for case in ['success','missing','invalid-json','wrong-certificate','wrong-package','bad-password','bad-key-password','invalid-keystore','existing-key']:
         work=root/case
         (work/'config').mkdir(parents=True)
         (work/'config/preview-identity.json').write_text(json.dumps({'package':bundle['package'],'certificate_sha256':cert}))
         changed=dict(bundle)
         if case=='wrong-certificate': changed['certificate_sha256']='a'*64
         if case=='wrong-package': changed['package']='id.veldafelix.spaces.preview3'
-        if case=='bad-password': changed['store_password']='incorrect-fixture-password'
+        if case=='bad-password': changed['store_password']=changed['key_password']='incorrect-fixture-password'
+        if case=='bad-key-password': changed['key_password']='incorrect-fixture-password'
         if case=='invalid-keystore': changed['keystore_base64']=base64.b64encode(b'not a keystore'*100).decode()
         raw='' if case=='missing' else '{invalid' if case=='invalid-json' else json.dumps(changed)
         if case=='existing-key':

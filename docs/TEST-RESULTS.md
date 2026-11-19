@@ -1,5 +1,18 @@
 # Verified results — 2026-11-18
 
+## Current signing setup — reset approved, secret still required
+
+The user explicitly selected **start fresh without old app data** and **phone only/no PC**. This authorizes preparing one exact reset, not silent data deletion or arbitrary future key changes. No phone app/data has been changed.
+
+- New RSA-3072 signing identity is pinned in `config/preview-identity.json` and applies to both debug and release under the **same existing `id.veldafelix.spaces.preview2` package**. A new private key was generated, not a recovery of the old key. The old 0.1.1 cannot be updated directly with it.
+- The private signing bundle was uploaded to the user's private Drive; matching size/checksum and **owner-only** permissions were verified. A real local restore of that backup succeeded and matched the pinned certificate with mode-0600 output. No private credentials were committed, published or printed in chat.
+- [44441128698](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44441128698), source `e8cc12f`: source compilation, lint, **49 JVM tests**, and instrumentation Java compilation passed. Signing/reset/preservation/probe mocks and actual temporary test-key restoration cases passed on Java 17 in CI. **The signed-build job failed as intended because `SPACES_PREVIEW_SIGNING_BUNDLE` is not configured.** Android emulator, real reset/update, identity and publication jobs were skipped.
+- Additional local tests cover rejecting inconsistent PKCS12 key passwords and preserving an existing key rather than overwriting it. Neither local fixtures nor mocks prove actual signed Android installation.
+- The proposed actual installation gate proves old-key update rejection, then an approved clean reset on a GitHub CI emulator only, followed by a same-key **3→4** private-data-retaining update probe. This real new-key path is **pending**, not passed. Probe output is separate from the main publication APK and the main APK is restored even after a failed probe build.
+- No new APK was delivered. The owner must configure the single private secret, then full signed build, both Android suites and actual installation checks must run before manual publication. [Setup and recovery policy](UPDATE-IDENTITY.md) · [phone instructions](PHONE-RESET.md).
+
+The following sections record earlier evidence, before approval of the fixed-key reset route.
+
 ## Unreleased 0.1.2 — sidebar tests passed, UPDATE BLOCKED
 
 - Runtime/test source `6d5e1e2`: [44437141451](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44437141451) passed compilation/lint/**49 JVM tests** and **27/27 + 27/27 Android tests**.

@@ -1,11 +1,12 @@
-# spaces : mobile — 0.1.2 work in progress (NOT RELEASED)
+# spaces : mobile — 0.1.2 (NOT RELEASED; one-time reset required)
 
-**Do not distribute the current candidate.** Sidebar positioning passed 49 JVM tests and four 27/27 Android suites, but the signing certificate does not match installed 0.1.1. No direct-update compatibility or completed data migration is claimed. [Signing blocker](UPDATE-IDENTITY.md) · [verification](TEST-RESULTS.md).
+**Do not distribute until signed installation checks pass.** The user approved starting fresh without old app data, using only a phone. A new key is privately backed up and pinned. The owner's GitHub Actions secret still needs configuration; there is no signed fallback build and no new download yet. [Signing setup](UPDATE-IDENTITY.md) · [phone reset steps](PHONE-RESET.md) · [verification](TEST-RESULTS.md).
 
-- Top tab moves to the nearest safe visual origin instead of permanently reserving hidden status-bar height. Its chevron center stays outside mandatory gestures; visible status bars/cutouts remain protected. The position follows inset changes without changing the saved horizontal fraction. Side docks remain unchanged.
-- VersionCode increases from 2 to 3; application ID remains `id.veldafelix.spaces.preview2`. A valid but different certificate is no longer accepted. No preview3 or user-data deletion workaround.
-- CI blocks publication until certificate/package/version checks, two full Android suites and actual same-package replacement/data retention all pass. The manual production workflow is guarded as well. Restoring the original private signing key is still required.
-- Phone verification of the new top position is pending; no new APK has been delivered. This is not the final app or a feature-completeness claim.
+- Top tab moves to the nearest safe visual origin instead of permanently reserving hidden status-bar height. Its chevron center stays outside mandatory gestures; visible status bars/cutouts remain protected. Earlier app-code validation passed 49 JVM tests and four 27/27 Android suites; the new signing/install path must still pass real tests.
+- Version 0.1.2/code 3 retains `id.veldafelix.spaces.preview2`. Both preview and release now use that same package and private key. No preview3/third-app workaround.
+- **Not an update of old-key 0.1.1.** After an APK is verified and available, end/recover sessions in the old apps first. Replacing 0.1.1's key requires one user-performed uninstall/reinstall; its collection/profiles/history are intentionally not migrated. If recovery is pending, do not uninstall. Do not remove current apps while the new build is still blocked.
+- Only this exact version is authorized for reset. Future versions must retain the new fixed key and update in place. A CI-only 3→4 probe must prove private-data retention without adding another package; that probe is not a user download.
+- CI requires a valid pinned private secret, source/lint checks, two complete Android suites, identity verification and actual installation/reset/update checks before preparing a draft. Publication remains manual. No feature-completeness, phone compatibility or performance-gain claim.
 
 ---
 

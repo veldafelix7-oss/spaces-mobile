@@ -1,41 +1,51 @@
-# Installed-app update identity — BLOCKED
+# Signing and one-time reset — PRIVATE SECRET SETUP REQUIRED
 
-## Selected identity
+## User decision and fixed identity
 
-Continue the existing 0.1.1 installation: `id.veldafelix.spaces.preview2`.
-Do not make `preview3`, change application ID to escape a certificate mismatch, or tell the user to uninstall/clear data to conceal a failed update. The earlier `.preview` app remains separate; these installed apps cannot be automatically merged by renaming an APK.
+The user explicitly selected **start fresh without old app data**, with **phone only / no PC**, after being told that the old signing key could not be restored. This authorizes preparing a one-time reinstall route, not deleting anything remotely or losing an active session's recovery journal. No app has been uninstalled or data erased by this session.
 
-Baseline: public release `preview-0.1.1-82e5e54`, versionCode 2.
-Current source: 0.1.2, versionCode 3, **same debug application ID**, not distributed.
+Keep `id.veldafelix.spaces.preview2` for **both debug and release**. Do not create preview3 or another production package. 0.1.2/versionCode 3 is the exact authorized reset version; this does not authorize arbitrary future key changes. The original `.preview` installation remains separate and is not automatically merged.
 
-## Evidence
+## New key is actually backed up
 
-The older script verified each APK's signature independently and the new package name. That was insufficient: two valid signatures can belong to different keys. The old side-by-side marker test also did not prove same-package update compatibility. No previous claim of permanent preview signing should be inferred from those checks.
+New pinned public certificate SHA-256:
 
-A real read-only audit [44439015416](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44439015416), using the APK already compiled in [44438095141](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44438095141), compared public signing certificate SHA-256 fingerprints:
+```text
+f53383afe91aa4524dc2b58245bdf66dd4a0ce52ddbaffd96834de9ed3094287
+```
 
-| APK | Certificate SHA-256 (not the APK file checksum) |
+A new RSA-3072 PKCS12 key was generated once, with random credentials. Its private JSON signing bundle was uploaded to the user's **private Google Drive**, not the public repository, a release, an Actions artifact or chat. Upload size/checksum matched the local file; Drive permissions were checked and contained **only the owner**. A real local restore verified that the bundle contains a private-key entry with the pinned certificate, and creates a mode-0600 key file. Private material lives only in the excluded `.local` workspace directory and private Drive backup; only public policy is committed in `config/preview-identity.json`.
+
+This is a backup of the **signing key**, not a backup of the old app's collection/profiles/history. User data will start empty after the approved reinstall.
+
+GitHub's Actions Secrets public-key endpoint returned HTTP 403 (`Resource not accessible by integration`). The agent cannot write the repository secret with the current connection. Reconnecting GitHub in Arena may resolve the missing permission; alternatively the owner can add the single secret from a phone browser. Never ask for GitHub passwords/tokens/2FA or paste the private bundle into chat.
+
+## One phone-only setup step before builds can continue
+
+1. Open the private Drive file **PRIVATE — spaces-mobile signing backup — keep safe.json**. Keep it private; do not publish/share it.
+2. Open the repository's **Settings → Secrets and variables → Actions → New repository secret**.
+3. Name: `SPACES_PREVIEW_SIGNING_BUNDLE`. Value: the **entire JSON file content**, not its Drive link. Save it privately on GitHub; do not send the value in chat.
+4. Tell the agent setup is done. Run full Android CI, not just the read-only audit. If the bundle does not match the pinned public certificate, signing must stay blocked.
+
+Do **not** uninstall the current phone apps yet. The new APK is not built/published until real signed installation and Android tests pass. See [phone reset checklist](PHONE-RESET.md).
+
+## Build and publication guards
+
+- No generated-key fallback and no dependence on a CI cache. A missing/malformed/wrong secret fails before signed build. Local builds without credentials produce unsigned output instead of a new valid identity.
+- Verify the decoded PKCS12 private-key entry using keytool, compare its certificate with the public pin, restrict temporary permissions, and remove the restored key at job exit. No private key is uploaded as an artifact.
+- Compare APK package, certificate and version against public policy. A different certificate is permitted **only** for versionCode 3 with the recorded reset approval, matching the pinned old baseline and pinned new key. The output must say **reset**, never claim an in-place update of 0.1.1.
+- The CI-only installation test requires GitHub Actions and an actual emulator. Reset mode proves old-key `adb install -r` is rejected and the old data remains, then uninstalls **on the disposable emulator only**. It tests clean new installation, followed by a same-key higher-version 3→4 probe retaining private file/preferences and no extra package. The probe APK is never a publication deliverable.
+- Both Android suites, source checks, pinned signing identity and real installation checks must pass before preparing a draft. No retry after a failed suite. Manual publication only.
+- Debug/release share package and key. Manual production release also requires a successful full push-triggered Android run for the exact source and creates only a draft.
+- After the first new-key APK is published, promote its release/code/certificate to `baseline` in the public policy and remove `one_time_reset`. Future versions must update in place using this same backed-up key; no automatic new reset exception.
+
+## Why the old direct update was impossible (historical evidence)
+
+The old script checked valid signatures independently, not certificate equality. That was inadequate. The read-only audit [44439015416](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44439015416) correctly blocked the previous ephemeral-key candidate from [44438095141](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44438095141):
+
+| APK | Public signing certificate SHA-256 |
 | --- | --- |
-| Installed-version baseline 0.1.1 | `f2bbc935f0290df36c3f1dbb44ae4579c2bb64b22e406e3b67b4159dcba6d7d2` |
-| Compiled 0.1.2 candidate | `4572df6410f8fd433b2afd9e8b98f0e031091b63db9f722b31f4f4391868f758` |
+| Old-key 0.1.1 baseline | `f2bbc935f0290df36c3f1dbb44ae4579c2bb64b22e406e3b67b4159dcba6d7d2` |
+| Rejected ephemeral 0.1.2 candidate | `4572df6410f8fd433b2afd9e8b98f0e031091b63db9f722b31f4f4391868f758` |
 
-The audit correctly failed with **Update blocked**. No new APK/release was published. The actual replacement/data-retention emulator job was **skipped**, not passed. The Actions cache API returned zero caches at inspection. The secrets listing endpoint returned HTTP 403; this does not prove that no private backup exists, but no matching key was restored by the tested build.
-
-## Guards now in place
-
-- Compare the candidate certificate to the installed-version baseline, not merely signature validity.
-- Require the same `preview2` package and a strictly increasing versionCode.
-- Accept standard, SDK-scoped and V2 apksigner output; reject missing/multiple distinct certificate digests.
-- Do not automatically cache a newly generated, unverified debug key. Caches are not a permanent backup anyway.
-- Only after identity succeeds, run a disposable-emulator `adb install -r` test with private file/preferences markers and an unchanged package list. No uninstall, downgrade, certificate bypass or data clearing in that test.
-- Require build, both Android suites, identity and actual replacement/data checks before preparing even a draft.
-- Apply the same certificate/package guard to the manually signed release workflow; it cannot silently publish a third package under the production name.
-- Optional fast audit: `gh workflow run android.yml --ref arena/7c652660-spaces-mobile -f audit_build_run_id=<existing-build-run-id>`. This reads an existing compiled artifact; all build/publication jobs are skipped. An incompatible APK must produce a failed audit.
-
-## Required to unblock a direct update
-
-1. Recover the **original private key corresponding to the baseline certificate** from a trusted backup. The APK contains a public certificate, not a recoverable copy of the private key. Generating another debug key or using the same alias/password will not reproduce it.
-2. Store that original key securely as the preview signing secret and keep a separate private backup. Do not commit it, upload it as an artifact, or request passwords/tokens in chat.
-3. Rebuild and require the real identity plus `adb install -r` data checks to pass, then repeat the Android suites before manual publication.
-
-If the original key is genuinely lost, an in-place update of the installed 0.1.1 is impossible under normal Android signature checks. A user-approved export/reinstall/import plan would be a separate, destructive-risk decision, requiring tested backups first. No such migration, uninstall or data deletion is implemented or authorized by this change. Do not declare this issue finished or deliver the incompatible candidate.
+No matching original private key was restored; the cache listing was empty. Listing secrets was forbidden, which does not prove no separate backup exists. An APK's public certificate cannot recover its private key, and repeating an alias/password does not regenerate it. The newly backed-up key above is a **different key**, not a recovered old key; hence the explicitly approved one-time reset.
