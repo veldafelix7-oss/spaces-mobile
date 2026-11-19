@@ -11,8 +11,8 @@ OLD="$DIRECTORY/spaces-mobile-preview.apk"
 NEW="${APK_PATH:-app/build/outputs/apk/debug/app-debug.apk}"
 old_info=$("$TOOLS/apksigner" verify --print-certs "$OLD")
 new_info=$("$TOOLS/apksigner" verify --print-certs "$NEW")
-old_cert=$(printf '%s\n' "$old_info" | sed -n 's/^Signer .*certificate SHA-256 digest: *//p' | tr -d '\r' | sort -u)
-new_cert=$(printf '%s\n' "$new_info" | sed -n 's/^Signer .*certificate SHA-256 digest: *//p' | tr -d '\r' | sort -u)
+old_cert=$(printf '%s\n' "$old_info" | awk '/^Signer |^V[0-9]+ Signer:/ && /certificate SHA-256 digest:/ {sub(/^.*certificate SHA-256 digest: */, ""); sub(/\r$/, ""); print}' | tr 'A-F' 'a-f' | sort -u)
+new_cert=$(printf '%s\n' "$new_info" | awk '/^Signer |^V[0-9]+ Signer:/ && /certificate SHA-256 digest:/ {sub(/^.*certificate SHA-256 digest: */, ""); sub(/\r$/, ""); print}' | tr 'A-F' 'a-f' | sort -u)
 # Public certificate diagnostics only; never print or upload the private keystore.
 for info in "$old_info" "$new_info"; do
   printf '%s\n' "$info" | head -c 3000 | while IFS= read -r line; do echo "::notice title=APK public signing metadata::$line"; done
