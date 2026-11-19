@@ -46,7 +46,9 @@ public final class Telemetry {
             while(events.hasNextEvent()) {
                 events.getNextEvent(e);
                 String pkg=e.getPackageName();if(pkg==null) continue;
-                String activity=pkg+"/"+e.getClassName()+"#"+e.getInstanceId();
+                String name=e.getClassName();
+                if(name==null || name.isEmpty()) { if(game.equals(pkg)) monitor.unknown();continue; }
+                String activity=pkg+"/"+name;
                 if(e.getEventType()==UsageEvents.Event.ACTIVITY_RESUMED) monitor.resumed(game.equals(pkg),activity);
                 else if(e.getEventType()==UsageEvents.Event.ACTIVITY_STOPPED) monitor.stopped(game.equals(pkg),activity);
                 // PAUSED activities can still be visible under permission/game-tool windows or in multi-window.

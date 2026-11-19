@@ -48,9 +48,9 @@ public class SessionExitMonitorTest {
     @Test public void openPanelDoesNotTriggerAutomaticEnd() {
         SessionExitMonitor m=away();assertFalse(poll(m,60000));assertFalse(m.shouldEnd(90000,90000,true,true,true,true));assertFalse(poll(m,120000));assertTrue(poll(m,140000));
     }
-    @Test public void repeatedEventsAreIdempotent() {
+    @Test public void repeatedSameClassGameResumesCannotProveAllInstancesStopped() {
         SessionExitMonitor m=new SessionExitMonitor();m.resumed(true,"game");m.resumed(true,"game");m.stopped(true,"game");m.stopped(true,"game");m.resumed(false,"other");
-        assertFalse(poll(m,60000));assertTrue(poll(m,80000));
+        assertFalse(poll(m,60000));assertFalse(poll(m,80000));
     }
     @Test public void backwardsElapsedClockFailsConservatively() {
         SessionExitMonitor m=away();assertFalse(poll(m,60000));assertFalse(poll(m,40000));assertFalse(poll(m,59999));assertTrue(poll(m,60000));
