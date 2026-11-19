@@ -11,8 +11,12 @@ OLD="$DIRECTORY/spaces-mobile-preview.apk"
 NEW="${APK_PATH:-app/build/outputs/apk/debug/app-debug.apk}"
 old_info=$("$TOOLS/apksigner" verify --print-certs "$OLD")
 new_info=$("$TOOLS/apksigner" verify --print-certs "$NEW")
-old_cert=$(printf '%s\n' "$old_info" | sed -n 's/^Signer #[0-9]* certificate SHA-256 digest: //p')
-new_cert=$(printf '%s\n' "$new_info" | sed -n 's/^Signer #[0-9]* certificate SHA-256 digest: //p')
+old_cert=$(printf '%s\n' "$old_info" | sed -n 's/^Signer .*certificate SHA-256 digest: *//p' | tr -d '\r' | sort -u)
+new_cert=$(printf '%s\n' "$new_info" | sed -n 's/^Signer .*certificate SHA-256 digest: *//p' | tr -d '\r' | sort -u)
+# Public certificate diagnostics only; never print or upload the private keystore.
+for info in "$old_info" "$new_info"; do
+  printf '%s\n' "$info" | head -c 3000 | while IFS= read -r line; do echo "::notice title=APK public signing metadata::$line"; done
+done
 [[ "$old_cert" =~ ^[a-fA-F0-9]{64}$ ]] && [[ "$new_cert" =~ ^[a-fA-F0-9]{64}$ ]] || { echo '::error::Expected one SHA-256 signer per APK'; exit 1; }
 echo "::notice title=Installed preview certificate::$old_cert"
 echo "::notice title=Candidate certificate::$new_cert"
