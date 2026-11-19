@@ -225,6 +225,49 @@ public class OverlayTest {
         inst.runOnMainSync(()->assertTrue(new Store(c).p.getString("overlay_error","Panel did not open after swipe; "+ui(controller::gestureStatus)),ui(controller::isOpen)));
     }
 
+    @Test public void topChevronIsAsCloseAsSafeAndReceivesFirstGlyphTap() {
+        inst.runOnMainSync(()->controller.moveTo(EdgeDock.TOP,.5f));settle();
+        final int[] target=new int[2];
+        inst.runOnMainSync(()->{
+            View handle=controller.handleView();android.view.WindowInsets insets=handle.getRootWindowInsets();assertNotNull(insets);
+            int glyph=Math.round(12*handle.getResources().getDisplayMetrics().density);
+            android.view.WindowInsets screen=activity.getSystemService(android.view.WindowManager.class).getMaximumWindowMetrics().getWindowInsets();
+            int expected=EdgeDock.topOrigin(insets.isVisible(android.view.WindowInsets.Type.statusBars())?
+                    screen.getInsetsIgnoringVisibility(android.view.WindowInsets.Type.statusBars()).top:0,
+                screen.getInsetsIgnoringVisibility(android.view.WindowInsets.Type.displayCutout()).top,
+                screen.getInsetsIgnoringVisibility(android.view.WindowInsets.Type.mandatorySystemGestures()).top,glyph);
+            assertEquals(expected,controller.placement().y);
+            handle.getLocationOnScreen(target);target[0]+=handle.getWidth()/2;target[1]+=glyph/2;
+        });
+        tap(target[0],target[1]);assertTrue("First visible top chevron tap: "+ui(controller::gestureStatus),ui(controller::isOpen));
+        tapCollapseGlyph(EdgeDock.TOP);assertFalse(ui(controller::isOpen));awaitActivityFocus();
+    }
+    @Test public void topRepositionsWhenActualSystemInsetsChange() {
+        inst.runOnMainSync(()->{
+            controller.moveTo(EdgeDock.TOP,.4f);
+            View handle=controller.handleView();View root=(View)handle.getParent();
+            android.view.WindowInsets original=handle.getRootWindowInsets();assertNotNull(original);
+            android.view.WindowInsets hidden=new android.view.WindowInsets.Builder(original)
+                .setInsets(android.view.WindowInsets.Type.statusBars()|android.view.WindowInsets.Type.mandatorySystemGestures()|android.view.WindowInsets.Type.displayCutout(),android.graphics.Insets.NONE)
+                .setInsetsIgnoringVisibility(android.view.WindowInsets.Type.displayCutout(),android.graphics.Insets.NONE)
+                .setVisible(android.view.WindowInsets.Type.statusBars(),false).build();
+            android.view.WindowInsets screen=activity.getSystemService(android.view.WindowManager.class).getMaximumWindowMetrics().getWindowInsets();
+            int cutout=screen.getInsetsIgnoringVisibility(android.view.WindowInsets.Type.displayCutout()).top;
+            int mandatory=screen.getInsetsIgnoringVisibility(android.view.WindowInsets.Type.mandatorySystemGestures()).top;
+            int glyph=Math.round(12*handle.getResources().getDisplayMetrics().density);
+            root.dispatchApplyWindowInsets(hidden);assertEquals(EdgeDock.topOrigin(0,cutout,mandatory,glyph),controller.placement().y);
+            android.view.WindowInsets shown=new android.view.WindowInsets.Builder(hidden)
+                .setInsets(android.view.WindowInsets.Type.statusBars(),android.graphics.Insets.of(0,60,0,0))
+                .setVisible(android.view.WindowInsets.Type.statusBars(),true).build();
+            int status=screen.getInsetsIgnoringVisibility(android.view.WindowInsets.Type.statusBars()).top;
+            root.dispatchApplyWindowInsets(shown);assertEquals(EdgeDock.topOrigin(status,cutout,mandatory,glyph),controller.placement().y);
+            // Reapplying identical, frame-relative insets must not move/oscillate.
+            int y=controller.placement().y;root.dispatchApplyWindowInsets(shown);assertEquals(y,controller.placement().y);
+            assertEquals(.4f,controller.placement().fraction,.001f);
+            root.dispatchApplyWindowInsets(original);
+        });
+    }
+
     @Test public void rightInwardSwipeOpensPanel() {
         EdgeDock.Placement p=ui(controller::placement);int x=p.x+p.width/2,y=p.y+p.height/2;
         int inward=Math.round(60*activity.getResources().getDisplayMetrics().density);

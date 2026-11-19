@@ -30,4 +30,20 @@ public class EdgeDockTest {
         assertEquals(1600,p.x+p.width);assertEquals(Math.round(.4f*(720-52)),p.y);
     }
 
+    @Test public void fullscreenWithoutReservedTopIsExactlyFlush() {
+        assertEquals(0,EdgeDock.topOrigin(0,0,0,12));
+    }
+    @Test public void mandatoryBandOnlyReservesChevronCenterNotTheWholeTab() {
+        int top=EdgeDock.topOrigin(0,0,24,12);
+        assertEquals(19,top);assertTrue(top<24);assertTrue(top+6>24);
+    }
+    @Test public void visibleStatusAndCutoutStillWin() {
+        assertEquals(24,EdgeDock.topOrigin(24,0,24,12));
+        assertEquals(32,EdgeDock.topOrigin(0,32,24,12));
+    }
+    @Test public void topOriginClampsBadInsets() {
+        assertEquals(0,EdgeDock.topOrigin(-10,-20,-30,-12));
+        assertEquals(1,EdgeDock.topOrigin(0,0,1,1));
+    }
+
 }

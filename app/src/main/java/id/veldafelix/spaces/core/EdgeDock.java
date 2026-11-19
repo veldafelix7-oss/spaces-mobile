@@ -19,7 +19,12 @@ public final class EdgeDock {
     public static Placement place(String requested,float offset,int screenWidth,int screenHeight,int thickness,int length) {
         return place(requested,offset,screenWidth,screenHeight,thickness,length,0);
     }
-    /** Top tabs sit below the OS-reserved notification/cutout band; side tabs stay flush. */
+    /** Nearest top origin with a usable chevron center, without covering a visible bar/cutout. */
+    public static int topOrigin(int visibleStatus,int cutout,int mandatory,int visibleThickness) {
+        int glyphHalf=Math.max(1,visibleThickness)/2;
+        return Math.max(Math.max(0,Math.max(visibleStatus,cutout)),Math.max(0,mandatory)>0?Math.max(0,mandatory)-glyphHalf+1:0);
+    }
+    /** topInset is the minimum safe visual origin; side tabs stay flush. */
     public static Placement place(String requested,float offset,int screenWidth,int screenHeight,int thickness,int length,int topInset) {
         String edge=edge(requested); float f=fraction(offset);
         int sw=Math.max(1,screenWidth),sh=Math.max(1,screenHeight);

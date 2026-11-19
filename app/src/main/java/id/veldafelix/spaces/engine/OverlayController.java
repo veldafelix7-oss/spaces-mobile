@@ -37,7 +37,7 @@ public final class OverlayController {
         gestureState=message;if(gestureTrace.size()>=18) gestureTrace.removeFirst();gestureTrace.addLast(message);
     }
     private final Handler main=new Handler(Looper.getMainLooper());
-    private boolean hidden=false,testing=false,windowAttached=false;
+    private boolean hidden=false,testing=false,windowAttached=false,handleTouchActive=false;
     private static final int MOVE_LEFT=0x01010001,MOVE_RIGHT=0x01010002,MOVE_TOP=0x01010003;
     public OverlayController(Context context,Runnable end) {
         Context app=context.getApplicationContext();
@@ -60,10 +60,22 @@ public final class OverlayController {
         return p;
     }
     private EdgeDock.Placement place(String edge,float offset) {
-        WindowInsets insets=wm.getMaximumWindowMetrics().getWindowInsets();
-        int safeTop=Math.max(insets.getInsetsIgnoringVisibility(WindowInsets.Type.statusBars()|WindowInsets.Type.displayCutout()).top,
-            insets.getInsetsIgnoringVisibility(WindowInsets.Type.mandatorySystemGestures()).top);
-        return EdgeDock.place(edge,offset,width(),height(),dp(18),dp(52),safeTop>0?safeTop+1:0);
+        WindowInsets current=window==null?null:window.getRootWindowInsets();
+        return place(edge,offset,current==null?wm.getMaximumWindowMetrics().getWindowInsets():current);
+    }
+    private EdgeDock.Placement place(String edge,float offset,WindowInsets insets) {
+        // Hidden status bars must not leave a permanent blank band in fullscreen.
+        // A mandatory gesture band can overlap the tab's rim, but not its chevron
+        // center. Cutouts and currently visible status bars remain unobstructed.
+        // ViewRoot insets are relative to the small overlay's frame: using their
+        // top sizes as screen coordinates causes a reposition/inset feedback loop.
+        // Read visibility from the live root, dimensions from display-wide metrics.
+        WindowInsets screen=wm.getMaximumWindowMetrics().getWindowInsets();
+        int top=EdgeDock.topOrigin(insets.isVisible(WindowInsets.Type.statusBars())?
+                screen.getInsetsIgnoringVisibility(WindowInsets.Type.statusBars()).top:0,
+            screen.getInsetsIgnoringVisibility(WindowInsets.Type.displayCutout()).top,
+            screen.getInsetsIgnoringVisibility(WindowInsets.Type.mandatorySystemGestures()).top,dp(12));
+        return EdgeDock.place(edge,offset,width(),height(),dp(18),dp(52),top);
     }
     @SuppressWarnings("ClickableViewAccessibility")
     public void show() {
@@ -99,7 +111,7 @@ public final class OverlayController {
             @Override public boolean onTouch(View v,android.view.MotionEvent e) {
                 switch(e.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
-                        note("down");
+                        handleTouchActive=true;note("down");
                         sx=e.getRawX();sy=e.getRawY();ox=hp.x;oy=hp.y;down=e.getEventTime();dragging=false;v.setPressed(true);return true;
                     case MotionEvent.ACTION_MOVE:
                         float dx=e.getRawX()-sx,dy=e.getRawY()-sy;
@@ -109,7 +121,7 @@ public final class OverlayController {
                         }
                         return true;
                     case MotionEvent.ACTION_UP:
-                        note("up drag="+dragging+" dx="+(e.getRawX()-sx)+" dy="+(e.getRawY()-sy));
+                        handleTouchActive=false;note("up drag="+dragging+" dx="+(e.getRawX()-sx)+" dy="+(e.getRawY()-sy));
                         v.setPressed(false);
                         if(dragging) snap(hp.x+hp.width/2f,hp.y+hp.height/2f);
                         else if(Math.hypot(e.getRawX()-sx,e.getRawY()-sy)<=slop || EdgeDock.inwardSwipe(dock.edge,e.getRawX()-sx,e.getRawY()-sy,dp(12))) {
@@ -118,7 +130,7 @@ public final class OverlayController {
                         }
                         return true;
                     case MotionEvent.ACTION_CANCEL:
-                        note("cancelled by window/system");
+                        handleTouchActive=false;note("cancelled by window/system");
                         v.setPressed(false);applyDock(dock,false);return true;
                     default:return true;
                 }
@@ -142,6 +154,13 @@ public final class OverlayController {
                 return super.dispatchTouchEvent(e);
             }
         };
+        window.setOnApplyWindowInsetsListener((v,insets)->{
+            if(panel==null && !handleTouchActive && dock!=null && EdgeDock.TOP.equals(dock.edge)) {
+                EdgeDock.Placement next=place(dock.edge,dock.fraction,insets);
+                if(next.x!=dock.x || next.y!=dock.y || next.width!=dock.width || next.height!=dock.height) applyDock(next,false);
+            }
+            return insets;
+        });
         window.setFocusableInTouchMode(true);
         window.addView(handle,new FrameLayout.LayoutParams(-1,-1));
         try { wm.addView(window,hp);windowAttached=true;saveDock(); }
