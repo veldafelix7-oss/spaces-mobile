@@ -1,4 +1,4 @@
-# Signing and one-time reset — PRIVATE SECRET SETUP REQUIRED
+# Signing and one-time reset — fixed private secret validated
 
 ## User decision and fixed identity
 
@@ -20,14 +20,18 @@ This is a backup of the **signing key**, not a backup of the old app's collectio
 
 GitHub's Actions Secrets public-key endpoint returned HTTP 403 (`Resource not accessible by integration`). The agent cannot write the repository secret with the current connection. Reconnecting GitHub in Arena may resolve the missing permission; alternatively the owner can add the single secret from a phone browser. Never ask for GitHub passwords/tokens/2FA or paste the private bundle into chat.
 
-## One phone-only setup step before builds can continue
+## Secret configuration confirmed
+
+After the user reported setup complete, full [44445695936](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44445695936), source `901bee2`, passed source checks, signed build, pinned certificate/package/reset-mode verification, both 27-test Android suites, and the actual emulator reset plus higher-version update/data-retention test. Manual dispatch did not publish an APK. The subsequent disappearing-sidebar fix is separate source and must pass all checks again before delivery. No new key was generated for that fix.
+
+## Phone-only setup reference (already completed)
 
 1. Open the private Drive file **PRIVATE — spaces-mobile signing backup — keep safe.json**. Keep it private; do not publish/share it.
 2. Open the repository's **Settings → Secrets and variables → Actions → New repository secret**.
 3. Name: `SPACES_PREVIEW_SIGNING_BUNDLE`. Value: the **entire JSON file content**, not its Drive link. Save it privately on GitHub; do not send the value in chat.
 4. Tell the agent setup is done. Run full Android CI, not just the read-only audit. If the bundle does not match the pinned public certificate, signing must stay blocked.
 
-Do **not** uninstall the current phone apps yet. The new APK is not built/published until real signed installation and Android tests pass. See [phone reset checklist](PHONE-RESET.md).
+Do **not** uninstall the current phone apps yet. Only the exact revised source that passes real signed installation and Android tests may be published; earlier green source is not enough for later changes. See [phone reset checklist](PHONE-RESET.md).
 
 ## Build and publication guards
 

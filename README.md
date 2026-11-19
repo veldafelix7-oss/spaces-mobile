@@ -4,7 +4,7 @@ Native Android game space for **Tecno Spark 20C (BG7), Android 13 / HiOS 13**, d
 
 ## Download and verified checks
 
-**Latest work: 0.1.2 is NOT released.** The user approved a one-time fresh start (phone only). A new fixed signing key is privately backed up, and both preview/release retain the existing `preview2` package. The remaining setup is the owner's private GitHub Actions secret; no signed APK will be built with a temporary fallback key. [Signing setup](docs/UPDATE-IDENTITY.md) · [phone-only reset checklist](docs/PHONE-RESET.md) · [test results](docs/TEST-RESULTS.md). **Do not uninstall until the new APK has passed the actual installation tests and is available.**
+**Latest work: 0.1.2 is not yet released.** The fixed private signing secret now works: [44445695936](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44445695936) passed signed build, pinned identity, both Android suites and the real reset/same-key higher-version data-retention test. A follow-up for the user's disappearing-sidebar report is under validation; no new phone APK is delivered yet. Sessions now default to **manual end**; automatic exit detection is opt-in and uses explicit activity-stop evidence rather than a sticky last-resumed package. [Evidence](docs/TEST-RESULTS.md) · [signing/reset policy](docs/UPDATE-IDENTITY.md) · [phone reset checklist](docs/PHONE-RESET.md). Do not uninstall before the revised APK is ready.
 
 [Download 0.1.1 Android 13 preview APK (~2.6 MB)](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.1-82e5e54/spaces-mobile-preview.apk) · [Release + checksum](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.1-82e5e54)
 

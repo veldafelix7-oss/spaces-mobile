@@ -170,7 +170,14 @@ public final class MainActivity extends Activity {
             LinearLayout active=Glass.card(this); active.addView(text(t("Sesi sedang berjalan","Session in progress"),15,Glass.INK,true)); Glass.gap(active,8);
             LinearLayout controls=Glass.row(this);
             controls.addView(button(t("Kembali ke game","Return to game"),true,()->launchGame(store.p.getString("active_game","")))); Glass.gap(controls,8);
-            controls.addView(button(t("Akhiri & pulihkan","End & restore"),false,this::endSession)); active.addView(controls); page.addView(active); Glass.gap(page,12);
+            controls.addView(button(t("Akhiri & pulihkan","End & restore"),false,this::endSession)); active.addView(controls);
+            if(store.p.getBoolean("overlay",true)) {
+                Glass.gap(active,8);active.addView(button(t("Tampilkan ulang sidebar","Restore sidebar"),false,()->{
+                    startService(new Intent(this,SessionService.class).setAction(SessionService.RESTORE_OVERLAY));
+                    toast(t("Permintaan sidebar dikirim. Jika tetap hilang, periksa Detail sesi terakhir.","Sidebar requested. If still missing, check Last session details."));
+                }));
+            }
+            page.addView(active); Glass.gap(page,12);
         }
         titleRow(t("Koleksi game","Your collection"),t("Pilih game untuk memulai sesi.","Choose a game to start a session."),t("＋ Tambah game","＋ Add game"),this::addGames);
         int count=0; for(GameSpec g:GameSpec.ALL) if(store.added(g.id)) count++;
@@ -248,7 +255,7 @@ public final class MainActivity extends Activity {
         if(needsRecovery()) { recover(); return; }
         if(!store.p.getBoolean("session_consent",false)) {
             new AlertDialog.Builder(this).setTitle(t("Sebelum mulai","Before you play"))
-                .setMessage(t("Profil hanya mengubah pengaturan yang didukung. FPS tidak dijamin naik. Mode Fokus membisukan panggilan/pesan, alarm tetap diizinkan. Pengaturan dicoba pulihkan saat sesi berakhir. Notifikasi menyediakan tombol berhenti. Tanpa akses penggunaan, akhiri sesi secara manual.","Profiles change supported settings only. Higher FPS is not guaranteed. Focus silences calls/messages while allowing alarms. Settings are restored where possible after the session. Use the notification to stop. Without usage access, end the session manually."))
+                .setMessage(t("Profil hanya mengubah pengaturan yang didukung. FPS tidak dijamin naik. Mode Fokus membisukan panggilan/pesan, alarm tetap diizinkan. Pengaturan dicoba pulihkan saat sesi berakhir. Notifikasi menyediakan tombol berhenti. Akhiri sesi manual secara bawaan; deteksi keluar otomatis hanya jika kamu aktifkan.","Profiles change supported settings only. Higher FPS is not guaranteed. Focus silences calls/messages while allowing alarms. Settings are restored where possible after the session. Use the notification to stop. Sessions end manually by default; automatic exit detection is opt-in."))
                 .setPositiveButton(t("Setuju & mulai","Agree & start"),(d,w)->{ store.p.edit().putBoolean("session_consent",true).apply(); startSession(game); })
                 .setNegativeButton(t("Batal","Cancel"),null).show(); return;
         }
@@ -339,6 +346,7 @@ public final class MainActivity extends Activity {
         LinearLayout focus=Glass.card(this);
         toggle(focus,t("Mode Fokus","Focus mode"),t("Senyapkan pesan/panggilan; alarm tetap diizinkan. Perlu izin Jangan Ganggu.","Silence calls/messages; allow alarms. Requires Do Not Disturb access."),"focus",true);
         Glass.gap(focus,12); toggle(focus,t("Sidebar tarik","Pull-out sidebar"),t("Tarik untuk membuka. Tahan dan geser untuk memindah tepi.","Swipe to open. Hold and drag to another edge."),"overlay",true);
+        Glass.gap(focus,12);toggle(focus,t("Akhiri otomatis saat keluar","End automatically after leaving"),t("Mati secara bawaan: akhiri lewat sidebar, notifikasi, atau aplikasi. Opsional dengan akses penggunaan; berlaku mulai sesi berikutnya.","Off by default: end via sidebar, notification or app. Optional with usage access; applies to the next session."),"auto_end",false);
         page.addView(focus);
         section(t("Pengecualian aplikasi","App exclusions"),t("WhatsApp dilindungi secara default. Tidak ada force-stop otomatis di versi ini.","WhatsApp is protected by default. This version does not automatically force-stop apps."));
         page.addView(button(t("Atur daftar pengecualian","Manage exclusions"),false,this::exclusions));
@@ -383,13 +391,20 @@ public final class MainActivity extends Activity {
         permission(permissions,t("Panel di atas game","Display over games"),Settings.canDrawOverlays(this)?t("Diizinkan","Allowed"):t("Opsional · belum diizinkan","Optional · not allowed"),()->open(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName()))));
         NotificationManager n=getSystemService(NotificationManager.class);
         permission(permissions,t("Jangan Ganggu","Do Not Disturb"),n.isNotificationPolicyAccessGranted()?t("Diizinkan","Allowed"):t("Dibutuhkan untuk Mode Fokus","Required for Focus mode"),()->open(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)));
-        permission(permissions,t("Akses penggunaan","Usage access"),Telemetry.usageAllowed(this)?t("Diizinkan · deteksi keluar game","Allowed · detect game exit"):t("Opsional · sesi diakhiri manual","Optional · end session manually"),()->open(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)));
+        permission(permissions,t("Akses penggunaan","Usage access"),Telemetry.usageAllowed(this)?t("Diizinkan · deteksi keluar tetap pilihan pengguna","Allowed · exit detection remains opt-in"):t("Opsional · sesi diakhiri manual","Optional · end session manually"),()->open(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)));
         permission(permissions,t("Notifikasi sesi","Session notifications"),n.areNotificationsEnabled()?t("Diizinkan","Allowed"):t("Aktifkan agar tombol berhenti terlihat","Enable to see the stop action"),()->{
             if(Build.VERSION.SDK_INT>=33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)
                 requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},31);
             else open(new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()));
         });
         page.addView(permissions);
+        Glass.gap(page,12);page.addView(button(t("Detail sesi terakhir / sidebar hilang","Last session / missing sidebar details"),false,()->info(t("Pemeriksaan sesi","Session evidence"),SessionDiagnostics.report(this))));
+        Glass.gap(page,8);page.addView(button(t("Pengaturan baterai/latar belakang aplikasi","App battery/background settings"),false,()->{
+            new AlertDialog.Builder(this).setTitle(t("Aktivitas latar belakang","Background activity"))
+                .setMessage(t("Periksa pengaturan baterai/aktivitas latar belakang spaces di HiOS. Pembatasan dapat menghentikan layanan; pengaturan ini tidak menjamin aplikasi selalu hidup. Aplikasi tidak mengubahnya otomatis.","Review spaces battery/background activity settings in HiOS. Restrictions can stop services; settings cannot guarantee survival. The app does not change them automatically."))
+                .setPositiveButton(t("Buka info aplikasi","Open app info"),(d,w)->open(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName()))))
+                .setNegativeButton(t("Batal","Cancel"),null).show();
+        }));
         Glass.gap(page,12); page.addView(button(t("Periksa & pulihkan pengaturan","Check & restore settings"),false,this::recover));
         section(t("Riwayat sesi","Session history"),t("Maksimal 30 sesi di HP ini. Grafik adalah suhu baterai, bukan FPS.","Up to 30 local sessions. Charts show battery temperature, not FPS."));
         JSONArray history=store.history();
@@ -400,7 +415,7 @@ public final class MainActivity extends Activity {
             LinearLayout item=Glass.card(this);
             item.addView(text((g==null?"Game":g.title)+" · "+session.optLong("duration")/60000+" min",15,Glass.INK,true)); Glass.gap(item,5);
             String when=new SimpleDateFormat("dd MMM yyyy · HH:mm",Locale.getDefault()).format(new Date(session.optLong("start")));
-            item.addView(text(when+(session.optString("reason").equals("interrupted")?t(" · terputus"," · interrupted"):""),11,Glass.MUTED,false));
+            item.addView(text(when+" · "+SessionDiagnostics.eventLabel(store,session.optString("reason")),11,Glass.MUTED,false));
             JSONArray points=session.optJSONArray("samples");
             if(points!=null && points.length()>1) {
                 Glass.gap(item,10); item.addView(new SessionChart(this,points),new LinearLayout.LayoutParams(-1,dp(120)));

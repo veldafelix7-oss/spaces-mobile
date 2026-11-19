@@ -31,16 +31,27 @@ public final class Telemetry {
         return o;
     }
     public static boolean usageAllowed(Context c) {
-        AppOpsManager m=c.getSystemService(AppOpsManager.class);
-        return m.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,Process.myUid(),c.getPackageName())==AppOpsManager.MODE_ALLOWED;
-    }
-    public static String foreground(Context c,long since) {
-        if(!usageAllowed(c)) return "";
         try {
-            UsageEvents events=c.getSystemService(UsageStatsManager.class).queryEvents(since,System.currentTimeMillis());
-            UsageEvents.Event e=new UsageEvents.Event(); String found="";
-            while(events.hasNextEvent()) { events.getNextEvent(e); if(e.getEventType()==UsageEvents.Event.ACTIVITY_RESUMED) found=e.getPackageName(); }
-            return found;
-        } catch(Exception e) { return ""; }
+            AppOpsManager m=c.getSystemService(AppOpsManager.class);
+            return m!=null && m.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,Process.myUid(),c.getPackageName())==AppOpsManager.MODE_ALLOWED;
+        } catch(Exception ignored) { return false; }
+    }
+    /** Only explicit activity visibility transitions; a RESUMED other app alone is not exit proof. */
+    public static boolean observePresence(Context c,long since,long until,String game,id.veldafelix.spaces.core.SessionExitMonitor monitor) {
+        if(!usageAllowed(c) || since>until) { monitor.unknown();return false; }
+        try {
+            UsageEvents events=c.getSystemService(UsageStatsManager.class).queryEvents(since,until);
+            if(events==null) { monitor.unknown();return false; }
+            UsageEvents.Event e=new UsageEvents.Event();
+            while(events.hasNextEvent()) {
+                events.getNextEvent(e);
+                String pkg=e.getPackageName();if(pkg==null) continue;
+                String activity=pkg+"/"+e.getClassName()+"#"+e.getInstanceId();
+                if(e.getEventType()==UsageEvents.Event.ACTIVITY_RESUMED) monitor.resumed(game.equals(pkg),activity);
+                else if(e.getEventType()==UsageEvents.Event.ACTIVITY_STOPPED) monitor.stopped(game.equals(pkg),activity);
+                // PAUSED activities can still be visible under permission/game-tool windows or in multi-window.
+            }
+            return true;
+        } catch(Exception error) { monitor.unknown();return false; }
     }
 }

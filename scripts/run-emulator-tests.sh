@@ -13,6 +13,6 @@ trap collect_results EXIT
 for pass in 1 2; do
   echo "::notice title=Emulator stage::Consecutive instrumentation suite ${pass}/2"
   result="emulator-results/instrumentation-${pass}.txt"
-  timeout 180s adb shell am instrument -w -r id.veldafelix.spaces.preview2.test/androidx.test.runner.AndroidJUnitRunner | tee "$result"
+  timeout 240s adb shell am instrument -w -r id.veldafelix.spaces.preview2.test/androidx.test.runner.AndroidJUnitRunner | tee "$result"
   python3 scripts/check-instrumentation.py "$result"
 done

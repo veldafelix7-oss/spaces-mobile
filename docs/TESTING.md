@@ -5,7 +5,7 @@
 - Android lint and debug compilation; instrumentation APK compilation.
 - Two consecutive complete instrumentation suites per emulator job, fail-closed with no retry after a failure. Only draft candidates are created automatically; publication requires manual review. All identity and replacement/data checks must pass as well.
 - Restore only the privately backed-up key matching `config/preview-identity.json`. Missing/wrong secrets must block signing; no generated fallback. Debug/release retain the existing preview2 package and same key.
-- For the exact user-approved reset version (0.1.2/code 3), prove old-key update rejection before a clean reset **on the CI emulator only**, then a same-key higher-version 3→4 probe with private file/preferences retention and unchanged package list. Any reset without exact policy approval or outside a CI emulator must fail. This actual new-key path is pending the owner's signing secret, **NOT yet verified**. See [signing setup](UPDATE-IDENTITY.md).
+- For the exact user-approved reset version (0.1.2/code 3), prove old-key update rejection before a clean reset **on the CI emulator only**, then a same-key higher-version 3→4 probe with private file/preferences retention and unchanged package list. Any reset without exact policy approval or outside a CI emulator must fail. The actual path passed on source `901bee2` in run `44445695936`; later lifecycle changes require a new full run. See [signing setup](UPDATE-IDENTITY.md).
 - Unreleased 0.1.2: 49 JVM tests and four 27-test Android suites passed across two builds. Added native top-glyph first-touch and inset-adaptation tests. Overall pipelines failed identity; no release. Signing/data gate success/failure cases have local mock tests only.
 - Overlay setup acknowledges Android's first-use fullscreen tutorial before creating the overlay. It then checks stable activity focus, and the open panel's input focus. Actual first open/collapse, held drag, all-dock repeated glyph cycles, media touch and Back remain OS-input assertions. No system settings are used to disable the tutorial and no missed app tap is retried.
 - Verified source `82e5e54`: two independent emulator runs each passed 45 JVM tests and both 25-test Android suites. See [results](TEST-RESULTS.md) for exact runs and earlier failed candidates.
@@ -27,6 +27,11 @@ For every row record pass/fail, actual result, app version and date. Never recor
 - [ ] Before reset/uninstall, all old sessions are ended and recovery is complete. Fresh data/no import is expected only after the approved reset; never erase an active recovery journal. [Phone checklist](PHONE-RESET.md).
 
 ### Permissions and session lifecycle
+- [ ] Default manual end remains active while playing and after returning Home. End explicitly with **Akhiri & pulihkan** after playing; DND/profile restoration is not automatic just because the game is no longer foreground.
+- [ ] Opt-in auto-end applies next session only. Permission/game-tool windows and split-screen must not be mistaken for game exit; real STOPPED+other-visible evidence and grace periods are required. Unsupported/OEM event gaps remain a limitation.
+- [ ] If sidebar disappears, reopen only when convenient: record whether session is active, already ended or recovery is pending; inspect **Detail sesi terakhir / sidebar hilang**. Check notification state. Do not call a stopped heartbeat proof of an OEM kill.
+- [ ] While service is alive, explicit **Tampilkan ulang sidebar** does not create a second session. Game/system suppression may still hide an attached overlay; no bypass is attempted.
+- [ ] Review app-specific HiOS battery/background settings only on user request. Do not disable global protection or claim immunity to memory pressure/force-stop.
 - [ ] Deny each optional permission: no crash, feature is accurately labelled unavailable.
 - [ ] Start from this app only; launching game externally does not start service.
 - [ ] Service notification stop works; app stop and overlay stop work.

@@ -1,6 +1,28 @@
 # Verified results — 2026-11-18
 
-## Current signing setup — reset approved, secret still required
+## Disappearing-sidebar follow-up — current candidate pending validation
+
+The user observed the edge handle disappear while actively playing both PUBG and Blood Strike, and continued playing without reopening spaces. There is no phone notification/history/recovery evidence identifying whether the service auto-ended, crashed, was killed, or an attached overlay was hidden. Do not assign an OEM cause or claim the phone problem is conclusively fixed.
+
+Code inspection found a real weakness: the old detector carried forward the last non-empty RESUMED package and could auto-end using stale other-app state. The follow-up defaults to manual end, makes automatic end explicit opt-in, and uses a bounded in-memory activity visibility ledger: game observed, all game activities explicitly STOPPED, another activity still visible, valid usage query, usable screen, no open overlay panel and both grace periods. PAUSED does not mean invisible. Query/permission uncertainty fails conservatively. Manual mode does not query other-app usage events.
+
+Local evidence includes last session event/time, sampling heartbeat, sidebar attachment status and, when available on reopen, Android's own-process historical exit reason filtered by recorded PID/time. No upload, invented kill diagnosis or attachment-equals-visibility claim. The user can request sidebar reattachment while the service is alive; automatic detached-view repair is bounded to one attempt. No process auto-restart or hide-overlay bypass. Delayed profile work checks destruction before applying and before creating the overlay; interrupted state/journal is preserved.
+
+New intended coverage: 15 JVM exit-monitor cases and four service instrumentation cases: background/manual session with usage permission beyond old exit grace, unexpected service destruction preserving recovery data, explicit sidebar reattachment without ending, and cancellation of queued profile work preventing late apply/ghost overlay. These use an allowlisted fixture ID, **not installed/running games**. The Android suite wall-clock cap increases from 180 to 240 seconds for the real background soak; no tap retry/assertion is weakened. Compilation/real new tests are pending for this source; earlier signing validation below does not certify it.
+
+## Fixed-key signing and actual reset/update — passed before follow-up
+
+[44445695936](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44445695936), source `901bee2`, passed:
+
+- source compilation/lint and 49 JVM tests;
+- signed APK/instrumentation build using the owner's configured private bundle, matching pinned certificate `f53383afe91aa4524dc2b58245bdf66dd4a0ce52ddbaffd96834de9ed3094287`;
+- exact authorized **reset** mode (not a claim of same-key update from old 0.1.1);
+- **27/27 + 27/27 Android tests**;
+- actual emulator rejection of an old-key update, preserved old marker, approved emulator-only uninstall/clean install, then **same-key 3→4 update retaining private file/preferences and unchanged package list**. The higher-version probe is not delivered.
+
+No publication job ran (manual dispatch), and no phone APK was delivered. The owner no longer needs to configure the secret again. [Signing policy and private-backup verification](UPDATE-IDENTITY.md).
+
+## Signing setup history — reset approved, initial missing-secret guard
 
 The user explicitly selected **start fresh without old app data** and **phone only/no PC**. This authorizes preparing one exact reset, not silent data deletion or arbitrary future key changes. No phone app/data has been changed.
 

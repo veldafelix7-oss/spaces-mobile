@@ -191,6 +191,8 @@ public final class OverlayController {
     @androidx.annotation.MainThread
     public boolean isOpen() { return panel!=null; }
     @androidx.annotation.MainThread
+    boolean isAttached() { return windowAttached && window!=null && window.isAttachedToWindow(); }
+    @androidx.annotation.MainThread
     boolean inputReady() { return panel!=null && window!=null && window.hasWindowFocus() && panel.isShown() && panel.getWidth()>0 && panel.getHeight()>0; }
     public void update(JSONObject point) { sample=point;renderMetrics(); }
     private void renderMetrics() {
