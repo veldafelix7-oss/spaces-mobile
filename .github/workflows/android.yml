@@ -4,6 +4,10 @@ on:
     branches: ['arena/7c652660-spaces-mobile']
   pull_request:
   workflow_dispatch:
+    inputs:
+      audit_build_run_id:
+        description: 'Optional: audit an existing APK artifact only; no new build or publication'
+        required: false
 permissions:
   contents: read
 concurrency:
@@ -11,6 +15,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
+    if: ${{ !inputs.audit_build_run_id }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -61,6 +66,30 @@ jobs:
           path: |
             app/build/outputs/apk/debug/*.apk
             app/build/outputs/apk/androidTest/debug/*.apk
+  audit:
+    if: ${{ inputs.audit_build_run_id != '' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: spaces-mobile-preview
+          path: app/build/outputs/apk/debug
+          run-id: ${{ inputs.audit_build_run_id }}
+          github-token: ${{ github.token }}
+      - name: Audit existing compiled APK (no build or publication)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/check-preview-signing.sh
+
   identity:
     needs: build
     runs-on: ubuntu-24.04
