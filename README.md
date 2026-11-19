@@ -4,6 +4,8 @@ Native Android game space for **Tecno Spark 20C (BG7), Android 13 / HiOS 13**, d
 
 ## Download and verified checks
 
+**Latest work: 0.1.2 is NOT released.** The closer top-tab positioning passed 49 JVM tests and four 27-test Android suites, but the candidate signing certificate differs from the installed 0.1.1. Publication is blocked; this is not a usable in-place update. No third app is being offered, and no uninstall/data clearing is requested. [Signing evidence and required recovery](docs/UPDATE-IDENTITY.md) · [test results](docs/TEST-RESULTS.md).
+
 [Download 0.1.1 Android 13 preview APK (~2.6 MB)](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.1-82e5e54/spaces-mobile-preview.apk) · [Release + checksum](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.1-82e5e54)
 
 Source `82e5e54` passed build/lint/**45 JVM tests** and **four complete 25-test Android suites**, two consecutive suites in each of two independent emulator runs: [44376931976](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44376931976) · [44378340735](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44378340735). Window-manager diagnostics identified Android's first-use fullscreen tutorial taking input focus; setup now acknowledges that system dialog before creating the overlay, without retrying any panel tap. If Android shows the fullscreen tutorial on your phone, acknowledge it first. This is **not** a claim that the app can receive input through a system modal. The previous failed candidate remains withdrawn. See [evidence and earlier failures](docs/TEST-RESULTS.md). HiOS/game compatibility and performance gains remain unverified.
@@ -22,7 +24,7 @@ The app is functional groundwork with honest capability boundaries. A command's 
 - Per-game Eco/Balanced/Performance preferences (Android GameManager) and supported 60/90 Hz display settings, optional through Shizuku. Balanced/System defaults do not force performance settings.
 - Optional Focus mode using Android DND (calls/messages silenced, alarms retained; actual OEM behavior must be verified).
 - Foreground session started only from this app, ongoing stop action, optional usage-based session end (30-second launch grace, 20-second absence grace; sampled every 10 seconds).
-- Thin edge-docked tab; quick inward swipe/tap opens metrics; hold and drag snaps left/right/top. Top sits just below the OS-reserved notification/cutout band, not over mandatory system gestures. No persistent numeric HUD while closed.
+- Thin edge-docked tab; quick inward swipe/tap opens metrics; hold and drag snaps left/right/top. The released 0.1.1 top tab reserves the full system band. Unreleased 0.1.2 moves closer when bars are hidden, while keeping the chevron center outside mandatory gestures and respecting visible status bars/cutouts. No persistent numeric HUD while closed.
 - Real battery temperature, available system RAM, battery level, media-volume control, brightness-settings shortcut, optional explicitly labelled TCP connectivity test.
 - Last 30 local sessions and temperature-over-time chart. Up to 1080 samples per session at 10-second intervals (rolling 3 hours). No invented FPS or 1% low.
 - Durable write-ahead journal, readback and compare-before-restore; preserves externally changed values. Explicit recovery after interruption.

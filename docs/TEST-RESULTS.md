@@ -1,5 +1,22 @@
 # Verified results — 2026-11-18
 
+## Unreleased 0.1.2 — sidebar tests passed, UPDATE BLOCKED
+
+- Runtime/test source `6d5e1e2`: [44437141451](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44437141451) passed compilation/lint/**49 JVM tests** and **27/27 + 27/27 Android tests**.
+- Source `8ae23c4` (same app/test code, signing-check changes only): independent [44438095141](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44438095141) also passed compilation/lint/**49 JVM tests** and **27/27 + 27/27 Android tests**. Four complete suites passed, with no retry after failure.
+- These overall runs are **not green**: their identity jobs failed; actual same-package upgrade checks and publication were skipped. Initial certificate-output parsing was too narrow; after support for the real `V2 Signer:` format, a real no-build audit [44439015416](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44439015416) correctly failed on **different certificates**. [Exact public fingerprints and recovery requirements](UPDATE-IDENTITY.md).
+- Version 0.1.2/code 3 keeps package `id.veldafelix.spaces.preview2`; **no new release/APK was delivered**. The existing public 0.1.1 remains unchanged. Do not describe the signing problem, data migration, or the entire requested app as finished.
+
+### Top-tab correction
+
+The old top origin used the full status/cutout/mandatory band, including hidden status bars. The new origin uses live status-bar visibility with display-wide inset dimensions. It takes the maximum of visible status bar, cutout, and mandatory band minus half the visible 12dp chevron plus one pixel. Thus the rim can be closer while the first glyph tap stays outside the mandatory band; no reserved top space means exactly flush. The origin adapts to actual inset changes, preserves the saved horizontal fraction, and avoids updates during an active handle gesture. Side docks and panel controls remain unchanged.
+
+Using frame-relative inset sizes directly would cause position/inset feedback in a small overlay, so only visibility is taken from the live root; dimensions remain screen-relative. A no-change guard avoids redundant window updates.
+
+Four new JVM tests cover flush fullscreen, nearer mandatory-band placement with a safe glyph center, status/cutout precedence and malformed inputs. Two added Android tests verify actual first top-chevron tap/close and live-inset repositioning without horizontal preference drift or repeated-inset movement. Existing actual handle tap, held top drag/downward swipe, all-dock cycles, volume/focus and Back tests remain. The initial [44436942435](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44436942435) exposed a mistaken one-pixel expected value in a new test; it was corrected to require the integer glyph center strictly beyond the mandatory pixel, not by weakening the safety rule.
+
+The closer placement has **not been installed on the user's Tecno** because a compatible update is unavailable. No phone visual/gesture certification is claimed. The upgrade script has local mock coverage for success and certificate/file/preferences/package failures, but its real successful emulator path is **not yet verified**. Signing mock tests cover standard/SDK-scoped/V2 output, mismatched certificates, package/version drift, absent digests, invalid signatures and download failure. Existing two-suite success/failure/timeout mocks still pass.
+
 ## Current 0.1.1 preview — repeated emulator validation passed
 
 - Source: `82e5e54f65d60efbe06f171a458ed11049b7b3cd`.

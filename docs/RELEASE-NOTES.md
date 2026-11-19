@@ -1,4 +1,16 @@
-# spaces : mobile — 0.1.1 device-testing preview
+# spaces : mobile — 0.1.2 work in progress (NOT RELEASED)
+
+**Do not distribute the current candidate.** Sidebar positioning passed 49 JVM tests and four 27/27 Android suites, but the signing certificate does not match installed 0.1.1. No direct-update compatibility or completed data migration is claimed. [Signing blocker](UPDATE-IDENTITY.md) · [verification](TEST-RESULTS.md).
+
+- Top tab moves to the nearest safe visual origin instead of permanently reserving hidden status-bar height. Its chevron center stays outside mandatory gestures; visible status bars/cutouts remain protected. The position follows inset changes without changing the saved horizontal fraction. Side docks remain unchanged.
+- VersionCode increases from 2 to 3; application ID remains `id.veldafelix.spaces.preview2`. A valid but different certificate is no longer accepted. No preview3 or user-data deletion workaround.
+- CI blocks publication until certificate/package/version checks, two full Android suites and actual same-package replacement/data retention all pass. The manual production workflow is guarded as well. Restoring the original private signing key is still required.
+- Phone verification of the new top position is pending; no new APK has been delivered. This is not the final app or a feature-completeness claim.
+
+---
+
+## Previous published 0.1.1 notes (historical)
+
 
 Source `82e5e54`: build/lint/45 JVM tests and **four 25/25 Android suites**, two consecutive suites on each of two independent emulator runs. [First run](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44376931976) · [Independent repeat](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44378340735).
 

@@ -3,7 +3,9 @@
 ## Automated (CI)
 - JVM: command allowlist, injection rejection, bounds, package restrictions, mode parsing, launch/exit grace, compare-before-restore.
 - Android lint and debug compilation; instrumentation APK compilation.
-- Two consecutive complete instrumentation suites per emulator job, fail-closed with no retry after a failure. Only draft candidates are created automatically; publication requires manual review.
+- Two consecutive complete instrumentation suites per emulator job, fail-closed with no retry after a failure. Only draft candidates are created automatically; publication requires manual review. All identity and replacement/data checks must pass as well.
+- Compare against installed 0.1.1's signing certificate, require the same package and higher versionCode; then test actual `adb install -r` with private file/preferences retention and unchanged package count. This real replacement path is currently blocked by a certificate mismatch, NOT verified. See [signing status](UPDATE-IDENTITY.md).
+- Unreleased 0.1.2: 49 JVM tests and four 27-test Android suites passed across two builds. Added native top-glyph first-touch and inset-adaptation tests. Overall pipelines failed identity; no release. Signing/data gate success/failure cases have local mock tests only.
 - Overlay setup acknowledges Android's first-use fullscreen tutorial before creating the overlay. It then checks stable activity focus, and the open panel's input focus. Actual first open/collapse, held drag, all-dock repeated glyph cycles, media touch and Back remain OS-input assertions. No system settings are used to disable the tutorial and no missed app tap is retried.
 - Verified source `82e5e54`: two independent emulator runs each passed 45 JVM tests and both 25-test Android suites. See [results](TEST-RESULTS.md) for exact runs and earlier failed candidates.
 - Android 13 emulator: landscape empty collection, Engine/Device rendering without permissions, language switching, rejected unsupported app, profile persistence, real Android telemetry access, empty/corrupt recovery, real emulator DND apply/restore/external-change/revocation, and foreground session start/duplicate/end/history (without a real game). Screenshots and AndroidRuntime log saved as artifacts.
@@ -48,7 +50,7 @@ For every row record pass/fail, actual result, app version and date. Never recor
 - [ ] Calls/messages silent, alarms permitted, original DND returns. Check normal calls and WA separately.
 - [ ] WA continues receiving messages; there is no WA shortcut/recorder.
 - [ ] Tap/swipe open, drag handle left/right/top, reopen panel after rotation, close restores touch access to game.
-- [ ] Top tab starts below the mandatory system band; notification swipe remains available above it. Test repeated chevron-center/glyph taps at all three docks.
+- [ ] Top tab approaches the physical edge when system bars are hidden; visible status/cutout protection remains, and its glyph center stays outside mandatory gestures. Check transient status bars and both landscape rotations; notification swipe must still work. Test first/repeated chevron-center taps at all three docks. Unreleased 0.1.2 needs a signing-compatible update before this phone check.
 - [ ] Open panel takes input focus only while open. Game input/focus/audio resume after arrow or Back; check each game does not unexpectedly pause/reload.
 - [ ] Metrics visible only inside panel. Battery temp agrees with public battery data; RAM is system available RAM.
 - [ ] FPS explicitly unavailable; no simulated values.
