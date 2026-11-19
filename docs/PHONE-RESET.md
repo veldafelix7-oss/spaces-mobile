@@ -1,12 +1,12 @@
-# Jalur satu aplikasi dari HP — belum waktunya uninstall
+# Jalur satu aplikasi dari HP — test preview 0.1.2 tersedia
 
-Status: pengguna mengizinkan mulai ulang tanpa koleksi/profil/riwayat lama dan hanya memakai HP. **Belum ada APK 0.1.2 dengan kunci tetap yang lolos seluruh tes dan diterbitkan. Jangan hapus aplikasi sekarang.**
+Status: pengguna mengizinkan mulai ulang tanpa koleksi/profil/riwayat lama dan hanya memakai HP. **Test preview 0.1.2 sudah lolos tes otomatis dan tersedia**, bukan aplikasi final atau jaminan masalah HiOS sudah hilang. [Unduh APK](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.2-8830907/spaces-mobile-preview.apk) · [hasil tes](TEST-RESULTS.md). **Jangan uninstall sebelum langkah pemulihan di bawah selesai dan APK tersimpan di HP.**
 
-## 1. Selesaikan pengaturan kunci build dahulu
+## 1. Kunci build dan revisi sudah lolos tes otomatis
 
-Ikuti [setup secret signing](UPDATE-IDENTITY.md). File JSON privat di Drive adalah cadangan **kunci penandatangan APK**, bukan backup data aplikasi. Jangan kirim isinya ke chat/issue atau membuatnya publik. Tidak memerlukan PC; secret dapat ditambahkan melalui browser HP.
+Secret signing sudah dikonfigurasi dan berhasil dipakai dalam tes nyata. Tidak perlu mengaturnya ulang. [Bukti dan kebijakan](UPDATE-IDENTITY.md). File JSON privat di Drive adalah cadangan **kunci penandatangan APK**, bukan backup data aplikasi; simpan tetap privat.
 
-Setelah secret tersimpan, agent harus menjalankan build bertanda tangan, dua suite Android, dan tes pemasangan/reset/update yang sebenarnya. Tes mock atau source-check yang hijau tidak menggantikan tes itu. APK probe versi lebih tinggi hanya untuk CI, bukan untuk diunduh pengguna.
+Revisi sidebar pada sumber `8830907` sudah lolos build bertanda tangan, 64 tes unit, dua suite Android 31/31, dan tes pemasangan/reset/update yang sebenarnya dalam run `44447692351`. Tes mock atau source-check saja tidak menggantikan tes itu. APK probe versi lebih tinggi hanya untuk CI, bukan untuk diunduh pengguna.
 
 ## 2. Hanya setelah APK baru siap dan unduhannya tersedia
 
@@ -24,6 +24,7 @@ Agent tidak memiliki akses untuk menekan uninstall atau mengubah data di HP. Lan
 - Konfirmasi petunjuk fullscreen Android jika muncul.
 - Coba sidebar atas: posisi lebih rapat saat status bar tersembunyi, tap/swipe pertama, tahan-geser, dan tutup lewat chevron/Back.
 - Pastikan kontrol/fokus game kembali normal setelah panel ditutup; cek kedua arah landscape dan saat status bar tampil sementara.
+- Setelah bermain, gunakan **Akhiri & pulihkan**: sesi kini manual secara bawaan. Jika sidebar hilang, periksa notifikasi lalu **Perangkat → Detail sesi terakhir / sidebar hilang**; saat sesi masih hidup tersedia **Tampilkan ulang sidebar**.
 - Jangan menganggap hasil emulator sebagai jaminan HiOS, pemulihan sesi atau peningkatan FPS.
 
 ## Pembaruan setelah reset ini

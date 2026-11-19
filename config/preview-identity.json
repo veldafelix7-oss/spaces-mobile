@@ -3,12 +3,8 @@
   "package": "id.veldafelix.spaces.preview2",
   "certificate_sha256": "f53383afe91aa4524dc2b58245bdf66dd4a0ce52ddbaffd96834de9ed3094287",
   "baseline": {
-    "release": "preview-0.1.1-82e5e54",
-    "version_code": 2,
-    "certificate_sha256": "f2bbc935f0290df36c3f1dbb44ae4579c2bb64b22e406e3b67b4159dcba6d7d2"
-  },
-  "one_time_reset": {
+    "release": "preview-0.1.2-8830907",
     "version_code": 3,
-    "user_approved_data_loss": true
+    "certificate_sha256": "f53383afe91aa4524dc2b58245bdf66dd4a0ce52ddbaffd96834de9ed3094287"
   }
 }

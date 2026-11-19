@@ -31,7 +31,7 @@ After the user reported setup complete, full [44445695936](https://github.com/ve
 3. Name: `SPACES_PREVIEW_SIGNING_BUNDLE`. Value: the **entire JSON file content**, not its Drive link. Save it privately on GitHub; do not send the value in chat.
 4. Tell the agent setup is done. Run full Android CI, not just the read-only audit. If the bundle does not match the pinned public certificate, signing must stay blocked.
 
-Do **not** uninstall the current phone apps yet. Only the exact revised source that passes real signed installation and Android tests may be published; earlier green source is not enough for later changes. See [phone reset checklist](PHONE-RESET.md).
+The exact revised source `8830907` has passed and is now a published test preview. Do **not** uninstall before downloading it and ending/recovering sessions in all old phone apps; earlier green source is not enough for later runtime changes. See [phone reset checklist](PHONE-RESET.md).
 
 ## Build and publication guards
 
@@ -41,7 +41,7 @@ Do **not** uninstall the current phone apps yet. Only the exact revised source t
 - The CI-only installation test requires GitHub Actions and an actual emulator. Reset mode proves old-key `adb install -r` is rejected and the old data remains, then uninstalls **on the disposable emulator only**. It tests clean new installation, followed by a same-key higher-version 3→4 probe retaining private file/preferences and no extra package. The probe APK is never a publication deliverable.
 - Both Android suites, source checks, pinned signing identity and real installation checks must pass before preparing a draft. No retry after a failed suite. Manual publication only.
 - Debug/release share package and key. Manual production release also requires a successful full push-triggered Android run for the exact source and creates only a draft.
-- After the first new-key APK is published, promote its release/code/certificate to `baseline` in the public policy and remove `one_time_reset`. Future versions must update in place using this same backed-up key; no automatic new reset exception.
+- Published test preview `preview-0.1.2-8830907` passed full run `44447692351` (64 JVM, 31/31 Android twice, real reset/update). Its release/code 3/certificate are now the policy baseline and `one_time_reset` has been removed. Future candidates must use versionCode greater than 3 and update in place using this same backed-up key; no automatic new reset exception. The immutable published tag retains the exact policy used to validate its one authorized reset.
 
 ## Why the old direct update was impossible (historical evidence)
 

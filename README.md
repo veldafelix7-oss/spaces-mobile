@@ -4,9 +4,13 @@ Native Android game space for **Tecno Spark 20C (BG7), Android 13 / HiOS 13**, d
 
 ## Download and verified checks
 
-**Latest work: 0.1.2 is not yet released.** The fixed private signing secret now works: [44445695936](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44445695936) passed signed build, pinned identity, both Android suites and the real reset/same-key higher-version data-retention test. A follow-up for the user's disappearing-sidebar report is under validation; no new phone APK is delivered yet. Sessions now default to **manual end**; automatic exit detection is opt-in and uses explicit activity-stop evidence rather than a sticky last-resumed package. [Evidence](docs/TEST-RESULTS.md) · [signing/reset policy](docs/UPDATE-IDENTITY.md) · [phone reset checklist](docs/PHONE-RESET.md). Do not uninstall before the revised APK is ready.
+**0.1.2 test preview is available — not the final app.** Source `8830907` passed build/lint/**64 JVM tests**, **31/31 + 31/31 Android tests**, pinned signing identity, and actual approved reset followed by same-key higher-version private-data retention: [44447692351](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44447692351). This does not certify HiOS/PUBG/Blood Strike survival or all requested features.
 
-[Download 0.1.1 Android 13 preview APK (~2.6 MB)](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.1-82e5e54/spaces-mobile-preview.apk) · [Release + checksum](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.1-82e5e54)
+[Download 0.1.2 Android 13 test preview (~2.6 MB)](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.2-8830907/spaces-mobile-preview.apk) · [Release + checksum](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.2-8830907)
+
+**One-time reset required from old-key 0.1.1, not a direct update.** Download first, end/recover sessions in each old app, then follow the explicitly approved [phone reset checklist](docs/PHONE-RESET.md). Collections/profiles/history start empty. No migration or third package. Sessions now default to **manual end**; after playing use **Akhiri & pulihkan**. Optional automatic detection is off by default. Local sidebar/session evidence and an explicit reattach action help investigate recurrence; no anti-kill or hidden-overlay bypass claim. [Evidence](docs/TEST-RESULTS.md) · [fixed signing policy](docs/UPDATE-IDENTITY.md).
+
+### Previous preview: 0.1.1 (historical)
 
 Source `82e5e54` passed build/lint/**45 JVM tests** and **four complete 25-test Android suites**, two consecutive suites in each of two independent emulator runs: [44376931976](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44376931976) · [44378340735](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44378340735). Window-manager diagnostics identified Android's first-use fullscreen tutorial taking input focus; setup now acknowledges that system dialog before creating the overlay, without retrying any panel tap. If Android shows the fullscreen tutorial on your phone, acknowledge it first. This is **not** a claim that the app can receive input through a system modal. The previous failed candidate remains withdrawn. See [evidence and earlier failures](docs/TEST-RESULTS.md). HiOS/game compatibility and performance gains remain unverified.
 
@@ -14,7 +18,7 @@ Source `82e5e54` passed build/lint/**45 JVM tests** and **four complete 25-test 
 
 0.1.1 uses isolated ID `id.veldafelix.spaces.preview2` and label `spaces : mobile · 0.1.1` because the original preview signing key could not be recovered. **Do not uninstall the old app or clear its data.** Old app/data stay separate; collection and permissions must be configured again. End/recover old sessions before using the new install. This is **not migration or a permanent signing solution**. [Original 0.1.0 preview](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.0-b7891f8) remains available.
 
-## Released status: 0.1.1 device-testing preview, not a proven performance booster
+## Scope: 0.1.2 device-testing preview, not a proven performance booster
 
 The app is functional groundwork with honest capability boundaries. A command's successful readback is **not** proof of a higher FPS. Testing on the actual BG7 is necessary; emulator results cannot certify HiOS or game compatibility.
 
@@ -35,18 +39,12 @@ Render downscale (especially HiOS Android 13), SurfaceFlinger FPS capture, proce
 
 ## Build and install (phone-only friendly)
 
-GitHub Actions → **Android checks & preview APK** → successful run → artifact **spaces-mobile-preview**. Extract the ZIP and install `app-debug.apk` on the phone. Android will request permission for the browser/file manager to install unknown apps. The unreleased 0.1.1 candidate application ID is `id.veldafelix.spaces.preview2` (0.1.0 used `.preview`). Do not install build artifacts from a run whose emulator checks failed.
+Only use the manually published test-preview link after **all** source, signing, identity, Android and real installation gates pass for that APK. A successful build job alone is not approval to install. 0.1.2 is published as a test preview; [phone reset checklist](docs/PHONE-RESET.md) applies to the user's explicitly approved one-time reset. End/recover old sessions first. The probe APK is CI-only and must not be installed on the phone.
 
-The CI preview debug signing key is reused through Actions cache when available (cache eviction can still change it). For reliable updates it can be fixed using repository secret `PREVIEW_KEYSTORE_BASE64` (standard Android debug credentials). Without the secret, a cache miss generates a new debug key; later APKs may not install as updates. Never uninstall to work around this without understanding local data will be lost. A signed release uses a **separate**, private key and application ID.
+### Fixed signing identity for preview and release
+Both build types retain `id.veldafelix.spaces.preview2` and use the same privately backed-up PKCS12 key. The single repository secret is `SPACES_PREVIEW_SIGNING_BUNDLE`; its configuration has already been validated. There is **no cache/random-key fallback**. CI fails closed on a missing, malformed or wrong key; credential-free local builds are unsigned. Never paste the bundle into chat or publish it.
 
-### Release signing
-The **Signed release APK** manual workflow fails closed unless these private secrets exist:
-- `RELEASE_KEYSTORE_BASE64`
-- `RELEASE_STORE_PASSWORD`
-- `RELEASE_KEY_ALIAS`
-- `RELEASE_KEY_PASSWORD`
-
-Create/back up the signing identity outside Git; use GitHub's encrypted secrets, optionally a protected `release` environment. Do not paste credentials into chat. For a new version increment both `versionCode` and `versionName`; dispatch with the matching `v…` tag. Same ID and signing key are required for in-place updates. Normal non-root installation always requires user confirmation. Preview → production is a separate install, not an in-place update.
+The manual **Signed release APK** workflow uses the same fixed identity, requires a full successful push-triggered Android run for that exact source, validates the matching `v…` version tag and prepares only a draft. It does not use separate release signing secrets or create another package. Future published versions must increase versionCode and retain the same package/key. [Policy and evidence](docs/UPDATE-IDENTITY.md).
 
 Local: JDK 17, Android SDK 35, then `./gradlew testDebugUnitTest lintDebug assembleDebug`. Gradle wrapper is included. Dependencies: Android Gradle Plugin 8.7.3, Shizuku API/provider 13.1.5, JUnit 4.13.2; no backend/API key.
 
