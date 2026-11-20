@@ -43,6 +43,15 @@ public class SampleJournalTest {
         File directory=temp.newFolder("not-a-file");
         try { new SampleJournal(directory).append("point");fail("write failure ignored"); } catch(IOException expected) { }
     }
+    @Test public void failedCompactionDoesNotAllowUnboundedFurtherAppends() throws Exception {
+        SampleJournal journal=new SampleJournal(file());
+        File blocked=new File(file().getPath()+".tmp");assertTrue(blocked.mkdir());
+        for(int i=0;i<SampleJournal.LIMIT*2-1;i++) journal.append("point");
+        try { journal.append("point");fail("Compaction failure hidden"); } catch(IOException expected) { }
+        long length=file().length();
+        for(int i=0;i<5;i++) { try { journal.append("point");fail("Backlog grew after failed compaction"); } catch(IOException expected) { } }
+        assertEquals(length,file().length());assertEquals(SampleJournal.LIMIT,journal.readLatest().size());
+    }
     @Test public void completedSessionCanClearItsDraft() throws Exception {
         SampleJournal journal=new SampleJournal(file());journal.append("point");journal.delete();assertFalse(file().exists());assertTrue(journal.readLatest().isEmpty());
     }

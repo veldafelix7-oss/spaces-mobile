@@ -71,7 +71,8 @@ public class SessionServiceTest {
             shell("appops set "+c.getPackageName()+" SYSTEM_ALERT_WINDOW default");
             shell("appops set "+c.getPackageName()+" GET_USAGE_STATS default");
             // Fixtures never modify system settings (Focus is off); clear synthetic recovery data.
-            store.p.edit().clear().commit();
+            if(store.p.getInt("draft_format",0)==1) store.clearDraft();
+            store.clearHistory();store.p.edit().clear().commit();
         }
     }
     @AfterClass public static void rotation() {

@@ -18,6 +18,8 @@ public final class SampleJournal {
             throw new IOException("Invalid sample record");
         File parent=file.getParentFile();
         if(parent!=null && !parent.isDirectory() && !parent.mkdirs()) throw new IOException("Sample directory unavailable");
+        // If compaction previously failed, do not keep appending an unbounded disk backlog.
+        if(records>=LIMIT*2) compact();
         // A process can die halfway through the last append. Never join its partial JSON to a new sample.
         try(RandomAccessFile out=new RandomAccessFile(file,"rw")) {
             long length=out.length();
