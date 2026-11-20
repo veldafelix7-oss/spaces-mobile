@@ -37,6 +37,7 @@ public final class PrivilegeBridge {
     }
     public static synchronized void bind(Context c) {
         if(!authorized() || connected() || binding) return;
+        if(activeConnection!=null) reset();
         binding=true;final long attempt=++generation;
         final CountDownLatch latch=new CountDownLatch(1);ready=latch;
         ServiceConnection connection=new ServiceConnection() {

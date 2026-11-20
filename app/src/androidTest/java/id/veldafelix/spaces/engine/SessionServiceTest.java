@@ -120,6 +120,13 @@ public class SessionServiceTest {
         assertTrue(SessionService.running);assertTrue(store.p.getBoolean("active",false));assertEquals(0,store.history().length());
         stopNormally();
     }
+    @Test public void failedHistorySaveDoesNotDiscardActiveDraftOrClaimCompletion() throws Exception {
+        start();store.p.edit().putString("history","corrupt-fixture").commit();
+        c.startService(command(SessionService.STOP));
+        await("Service ends safely after save failure",()->!SessionService.running,15000);
+        assertTrue(store.p.getBoolean("active",false));assertTrue(store.draftSamples().length()>0);
+        assertEquals("corrupt-fixture",store.p.getString("history",""));assertEquals("save_failed",store.p.getString("session_last_event",""));
+    }
     @Test public void stopDuringQueuedProfileWorkCannotCreateGhostOverlayOrApplyLater() throws Exception {
         CountDownLatch entered=new CountDownLatch(1),release=new CountDownLatch(1);
         Engine.WORK.execute(()->{ entered.countDown();try { release.await(15,TimeUnit.SECONDS); } catch(InterruptedException e) { Thread.currentThread().interrupt(); } });

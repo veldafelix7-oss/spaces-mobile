@@ -44,10 +44,12 @@ public final class MainActivity extends Activity {
         if(grant==PackageManager.PERMISSION_GRANTED) PrivilegeBridge.bind(getApplicationContext());
         if(resumed) render();
     });
-    private final Shizuku.OnBinderReceivedListener binderReceived=()->runOnUiThread(()->{ PrivilegeBridge.bind(this); if(resumed) render(); });
+    private final Shizuku.OnBinderReceivedListener binderReceived=()->runOnUiThread(()->{ if(resumed) render(); });
     private final Shizuku.OnBinderDeadListener binderDead=()->runOnUiThread(()->{ if(resumed) render(); });
     @Override public void onCreate(Bundle state) {
         super.onCreate(state); store=new Store(this);
+        final Store migrationStore=store;
+        Engine.WORK.execute(()->{ try { migrationStore.history(); } catch(Exception ignored) { /* Original data stays intact; Device page explains a read failure. */ } });
         if(state!=null) tab=state.getInt("tab",0);
         WindowManager.LayoutParams window=getWindow().getAttributes();
         window.layoutInDisplayCutoutMode=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
@@ -73,6 +75,7 @@ public final class MainActivity extends Activity {
         super.onStop();releaseUi();
     }
     private void releaseUi() {
+        if(isDestroyed()) return;
         if(reportWindow!=null) { reportWindow.dismiss();reportWindow=null; }
         page=null;pageScroll=null;Arrays.fill(navigation,null);iconCache.clear();installationCache.clear();
         setContentView(new FrameLayout(this));
@@ -305,7 +308,7 @@ public final class MainActivity extends Activity {
         if(SessionService.running) { toast(t("Akhiri sesi aktif terlebih dahulu.","End the active session first.")); return; }
         toast(t("Memeriksa jurnal pemulihan…","Checking recovery journal…"));
         Engine.WORK.execute(()->{
-            Engine engine=new Engine(this); String log=engine.restore();
+            Engine engine=new Engine(this); String log=engine.restore();boolean saveFailed=false;
             // Preserve interrupted sessions as explicitly incomplete, never invent missing samples.
             if(store.p.getBoolean("active",false)) {
                 try {
@@ -320,11 +323,11 @@ public final class MainActivity extends Activity {
                     summary.put("diagnostics",SessionDiagnostics.snapshot(this));
                     store.saveSession(summary);
                     store.p.edit().putBoolean("active",false).commit();store.clearDraft();
-                } catch(Exception error) { runOnUiThread(()->toast(t("Riwayat belum tersimpan. Data pemulihan tetap disimpan; coba lagi.","History not saved. Recovery data was kept; try again."))); }
+                } catch(Exception error) { saveFailed=true; }
             }
-            boolean pending=engine.pending();
+            boolean pending=engine.pending();final boolean archivePending=saveFailed;
             runOnUiThread(()->{ if(!isFinishing() && resumed) { render(); reportDialog(t("Pemulihan","Recovery"),
-                (pending?t("Masih ada perubahan yang menunggu. Sambungkan Shizuku/periksa izin, lalu ulangi.\n\n","Some changes are pending. Reconnect Shizuku/check permissions, then retry.\n\n"):t("Pemeriksaan selesai.\n\n","Check complete.\n\n"))+SessionDiagnostics.engineReport(store,log,true),null); } });
+                (archivePending?t("Riwayat belum tersimpan. Sampel sesi tetap disimpan; coba pemulihan lagi. Jangan hapus data aplikasi.\n\n","History not saved. Session samples were kept; retry recovery. Do not clear app data.\n\n"):pending?t("Masih ada perubahan yang menunggu. Sambungkan Shizuku/periksa izin, lalu ulangi.\n\n","Some changes are pending. Reconnect Shizuku/check permissions, then retry.\n\n"):t("Pemeriksaan selesai.\n\n","Check complete.\n\n"))+SessionDiagnostics.engineReport(store,log,true),null); } });
         });
     }
     private void section(String title,String subtitle) {
