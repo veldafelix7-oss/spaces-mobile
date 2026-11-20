@@ -10,10 +10,13 @@ mkdir -p emulator-results
 adb install baseline/spaces-mobile-preview.apk
 adb shell am start -W -n "$PACKAGE/id.veldafelix.spaces.MainActivity"
 adb shell am force-stop "$PACKAGE"
+adb install apks/androidTest/debug/app-debug-androidTest.apk
 seed() {
   adb shell run-as "$PACKAGE" mkdir -p files shared_prefs
   printf '%s\n' retained-file | adb shell run-as "$PACKAGE" tee files/update-check.txt > /dev/null
   printf '%s\n' '<?xml version="1.0" encoding="utf-8"?><map><string name="check">retained-pref</string></map>' | adb shell run-as "$PACKAGE" tee shared_prefs/update-check.xml > /dev/null
+  # Real 0.1.2 schema, seeded while the published baseline is installed/stopped.
+  printf '%s\n' '<?xml version="1.0" encoding="utf-8"?><map><string name="history">[{"id":"upgrade-fixture","game":"com.tencent.igfit","start":1000,"reason":"manual","samples":[{"at":1000,"temp":35.5}]}]</string><boolean name="active" value="true"/><string name="active_game">com.tencent.igfit</string><long name="active_start" value="1000"/><string name="draft_samples">[{"at":2000,"temp":35.5}]</string><string name="journal">[]</string><string name="com.tencent.igfit.mode">eco</string></map>' | adb shell run-as "$PACKAGE" tee shared_prefs/spaces.xml > /dev/null
 }
 verify_data() {
   adb shell run-as "$PACKAGE" cat files/update-check.txt | tr -d '\r' | tee emulator-results/update-file.txt
@@ -45,12 +48,20 @@ else
   adb install -r apks/debug/app-debug.apk
   verify_data
 fi
+verify_app_storage() {
+  local phase="$1"
+  timeout 60s adb shell am instrument -w -r -e class id.veldafelix.spaces.UpgradeContinuityTest -e spaces_upgrade true "$PACKAGE.test/androidx.test.runner.AndroidJUnitRunner" | tee "emulator-results/storage-$phase.txt"
+  grep -q 'OK (1 test)' "emulator-results/storage-$phase.txt"
+  if grep -q 'FAILURES!!!' "emulator-results/storage-$phase.txt"; then exit 1; fi
+}
+verify_app_storage candidate
 # Prove the new private key supports a genuine higher-version update (candidate -> candidate + 1).
 # The probe is CI-only and must never be published as the user APK.
 adb shell am force-stop "$PACKAGE"
 adb install -r probe/app-update-probe.apk
 verify_data
+verify_app_storage probe
 packages > emulator-results/packages-after.txt
 cmp emulator-results/packages-before.txt emulator-results/packages-after.txt
 adb shell am start -W -n "$PACKAGE/id.veldafelix.spaces.MainActivity"
-echo "::notice title=Installation verified::Mode=$MODE; same package, pinned key, higher-version replacement retained private file/preferences; no extra package."
+echo "::notice title=Installation verified::Mode=$MODE; same package, pinned key, higher-version replacement retained private file/preferences plus legacy history, active draft and profile across both replacements; no extra package."

@@ -67,6 +67,54 @@ public class AppSmokeTest {
         screenshot("04-collection-test-only");
     }
     @Test public void emptyRecoveryIsSafe() { Engine e=new Engine(context); assertFalse(e.pending()); assertEquals("",e.restore()); }
+    private <T extends View> T findType(View root,Class<T> kind) {
+        if(kind.isInstance(root)) return kind.cast(root);
+        if(root instanceof ViewGroup) for(int i=0;i<((ViewGroup)root).getChildCount();i++) { T found=findType(((ViewGroup)root).getChildAt(i),kind);if(found!=null) return found; }
+        return null;
+    }
+    private android.app.AlertDialog reportWindow() throws Exception {
+        java.lang.reflect.Field field=MainActivity.class.getDeclaredField("reportWindow");field.setAccessible(true);
+        java.util.concurrent.atomic.AtomicReference<android.app.AlertDialog> result=new java.util.concurrent.atomic.AtomicReference<>();
+        inst.runOnMainSync(()->{ try { result.set((android.app.AlertDialog)field.get(activity)); } catch(IllegalAccessException error) { throw new AssertionError(error); } });
+        return result.get();
+    }
+    @Test public void sessionReportIsCompactScrollableAndClearlyAttributesTheGame() throws Exception {
+        Store store=new Store(context);
+        store.p.edit().putString("active_game","com.tencent.igfit").putString("session_id",java.util.UUID.randomUUID().toString())
+            .putLong("active_start",1000).putString("session_last_event","running").putString("session_overlay_status","attached")
+            .putBoolean("session_finished",true).putInt("session_exit_reason",android.app.ApplicationExitInfo.REASON_LOW_MEMORY).putLong("session_exit_at",5000)
+            .putLong("session_pss_kb",20000).putLong("session_pss_first_kb",19000).putLong("session_pss_peak_kb",22000).commit();
+        click("Perangkat");click("Detail sesi terakhir / sidebar hilang");
+        android.app.AlertDialog dialog=reportWindow();assertNotNull(dialog);inst.waitForIdleSync();
+        inst.runOnMainSync(()->{
+            android.widget.ScrollView scroll=findType(dialog.getWindow().getDecorView(),android.widget.ScrollView.class);assertNotNull(scroll);
+            TextView body=findType(scroll,TextView.class);assertNotNull(body);
+            assertTrue(body.getText().toString().contains("PUBGM FLASH"));assertTrue(body.getText().toString().contains("proses spaces karena memori rendah"));
+            assertFalse(body.getText().toString().contains("attached"));assertTrue(body.isTextSelectable());
+            assertEquals(13f,body.getTextSize()/context.getResources().getDisplayMetrics().scaledDensity,.1f);
+            assertTrue("Long evidence must scroll rather than hide below buttons",scroll.canScrollVertically(1));
+        });
+        screenshot("05-session-report");
+    }
+    @Test public void historyLoadsOnlyTheRequestedChart() throws Exception {
+        Store store=new Store(context);store.clearHistory();
+        for(int j=0;j<3;j++) {
+            org.json.JSONArray points=new org.json.JSONArray();for(int i=0;i<100;i++) points.put(new org.json.JSONObject().put("at",i*10000).put("temp",35+i*.01));
+            store.saveSession(new org.json.JSONObject().put("id","history-"+j).put("game","com.tencent.igfit").put("reason","manual").put("samples",points));
+        }
+        click("Perangkat");long deadline=android.os.SystemClock.elapsedRealtime()+10000;
+        java.util.concurrent.atomic.AtomicBoolean ready=new java.util.concurrent.atomic.AtomicBoolean();
+        while(!ready.get() && android.os.SystemClock.elapsedRealtime()<deadline) {
+            inst.runOnMainSync(()->ready.set(find(activity.getWindow().getDecorView(),"Grafik & laporan sesi")!=null));android.os.SystemClock.sleep(40);
+        }
+        assertTrue("History finished loading",ready.get());
+        inst.runOnMainSync(()->assertNull("Cards must not materialize all graphs",findType(activity.getWindow().getDecorView(),id.veldafelix.spaces.ui.SessionChart.class)));
+        click("Grafik & laporan sesi");
+        while(reportWindow()==null && android.os.SystemClock.elapsedRealtime()<deadline) android.os.SystemClock.sleep(40);
+        android.app.AlertDialog dialog=reportWindow();assertNotNull(dialog);inst.waitForIdleSync();
+        inst.runOnMainSync(()->assertNotNull(findType(dialog.getWindow().getDecorView(),id.veldafelix.spaces.ui.SessionChart.class)));
+        screenshot("06-history-report");store.clearHistory();
+    }
     private void shell(String command) throws Exception {
         try(android.os.ParcelFileDescriptor fd=inst.getUiAutomation().executeShellCommand(command);
             java.io.InputStream in=new android.os.ParcelFileDescriptor.AutoCloseInputStream(fd)) {

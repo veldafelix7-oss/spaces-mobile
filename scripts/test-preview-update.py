@@ -18,6 +18,8 @@ state=json.loads(path.read_text()) if path.exists() else {'phase':'old','file':F
 with open(os.environ['COMMANDS'],'a') as log: log.write(' '.join(args)+'\\n')
 if args==['shell','getprop','ro.kernel.qemu']:
     print('0' if case=='not-emulator' else '1')
+elif args[:4]==['shell','am','instrument','-w']:
+    print('FAILURES!!!' if case=='storage' else 'OK (1 test)')
 elif args[:2]==['install','-r']:
     probe=args[-1].startswith('probe/')
     if not probe and mode=='reset':
@@ -30,7 +32,7 @@ elif args[:1]==['uninstall']:
     if case=='uninstall-failure': sys.exit(1)
     state={'phase':'absent','file':False,'pref':False}
 elif args[:1]==['install']:
-    if args[-1].startswith('apks/'):
+    if args[-1]=='apks/debug/app-debug.apk':
         state={'phase':'new','file':case=='dirty-reset','pref':False}
 elif args[:4]==['shell','pm','list','packages']:
     print('package:id.veldafelix.spaces.preview2')
@@ -46,8 +48,8 @@ elif 'cat' in args:
 path.write_text(json.dumps(state))
 ''')
     adb.chmod(0o755)
-    cases = [('update', case) for case in ['success', 'certificate', 'file', 'pref', 'package']]
-    cases += [('reset', case) for case in ['success', 'not-emulator', 'wrong-error', 'unexpected-accept', 'dirty-reset', 'uninstall-failure', 'certificate', 'file', 'pref', 'package']]
+    cases = [('update', case) for case in ['success', 'certificate', 'file', 'pref', 'package', 'storage']]
+    cases += [('reset', case) for case in ['success', 'not-emulator', 'wrong-error', 'unexpected-accept', 'dirty-reset', 'uninstall-failure', 'certificate', 'file', 'pref', 'package', 'storage']]
     cases += [('unknown', 'bad-mode')]
     for mode, case in cases:
         state, commands = root/'state', root/'commands'

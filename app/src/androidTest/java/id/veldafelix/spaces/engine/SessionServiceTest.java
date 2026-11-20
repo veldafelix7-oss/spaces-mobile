@@ -81,13 +81,16 @@ public class SessionServiceTest {
         assertFalse(store.p.contains("auto_end"));start();
         assertFalse(store.p.getBoolean("session_auto_end",true));
         long first=store.p.getLong("session_heartbeat",0);
+        await("First process-memory sample",()->store.p.getLong("session_memory_at",0)>0,5000);
+        long firstMemory=store.p.getLong("session_memory_at",0);
         shell("input keyevent 3"); // Real launcher switch; do not confuse this with gameplay certification.
-        await("Service must keep sampling past the old 30-second exit grace",()->store.p.getLong("session_heartbeat",0)>=first+31000,47000);
+        await("Service must keep sampling past the old 30-second exit grace",()->store.p.getLong("session_heartbeat",0)>=first+61000,80000);
         assertTrue(SessionService.running);assertTrue(store.p.getBoolean("active",false));
         java.lang.reflect.Field page=MainActivity.class.getDeclaredField("page");page.setAccessible(true);
         inst.runOnMainSync(()->{ try { assertNull("Background activity must release history/UI",page.get(activity)); } catch(IllegalAccessException e) { throw new AssertionError(e); } });
         assertFalse("No whole-session JSON in preferences",store.p.contains("draft_samples"));
         assertTrue(store.draftSamples().length()>=4);
+        await("A second periodic process-memory sample",()->store.p.getLong("session_memory_at",0)>=firstMemory+60000,5000);
         assertTrue(store.p.getLong("session_pss_kb",0)>0);
         android.os.Bundle evidence=new android.os.Bundle();
         evidence.putString("spaces_diagnostic","Background fixture PSS KB: first="+store.p.getLong("session_pss_first_kb",0)+", last="+store.p.getLong("session_pss_kb",0)+", peak="+store.p.getLong("session_pss_peak_kb",0)+"; not PUBG/HiOS certification");inst.sendStatus(0,evidence);
