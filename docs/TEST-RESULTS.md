@@ -1,3 +1,13 @@
+# Verified candidate 0.1.3 — unpublished; phone validation still pending
+
+Exact source `bafbe42a296cdd886750e89f55029882e88c5f0c` passed [run 44741557154](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44741557154): compilation/lint, **79 JVM tests**, **43 Android instrumentation tests in two consecutive full suites**, fixed signing identity, and actual same-key update continuity from published 0.1.2/code 3 to candidate/code 4 and higher-version probe. The fixture retained seeded legacy history, profile, active session draft and journal through both replacements; no uninstall or data clear was performed in update mode. The manual preview job prepared a **draft only**. There is no published 0.1.3 release/APK link.
+
+The compact report UI test now targets the tagged visible report body and verifies game attribution, realistic date, saved-heartbeat/state wording, process-versus-game caveat, font sizing, selectability and scrolling. Earlier source `24cfb82` had one selector-related UI assertion failure and was superseded; source `dc0462c` passed, after which its generated screenshot exposed epoch/blank timestamps in the *test fixture*. Current `bafbe42` seeds coherent values and passed the full suite. This does not imply a product clock defect or failure in the final candidate.
+
+Emulator results do not certify Shizuku behavior on HiOS, PUBG/Blood Strike stability, memory use under gameplay, FPS/battery improvement, or resolution of the user's incident. No leak has been demonstrated. Do not install a CI draft APK; real-device testing and explicit publication remain separate.
+
+---
+
 # Verified results — 2026-11-18
 
 ## Disappearing-sidebar follow-up — automated gates passed, phone validation remains

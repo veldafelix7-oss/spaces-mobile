@@ -4,7 +4,7 @@ Native Android game space for **Tecno Spark 20C (BG7), Android 13 / HiOS 13**, d
 
 ## Download and verified checks
 
-**In progress: 0.1.3 stability repair only.** Memory workload, session/sidebar recovery and clearer reports; no downscale/new booster features. [Findings, data preservation and pending checks](docs/MEMORY-STABILITY.md). Published download below remains 0.1.2 until the revised source passes all gates.
+**0.1.3 repair candidate passed CI; not published.** Repair-only memory/session/sidebar and clearer reports—no downscale/new booster features. Exact source `bafbe42` passed build/lint, 79 JVM tests, two consecutive 43-test Android suites, pinned-key identity and actual same-key data-preserving update in [44741557154](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44741557154). This does not certify HiOS or gameplay and does not show a proven leak/FPS improvement. Published download below remains 0.1.2; no 0.1.3 APK is handed off yet. [Evidence and scope](docs/MEMORY-STABILITY.md).
 
 **0.1.2 test preview is available — not the final app.** Source `8830907` passed build/lint/**64 JVM tests**, **31/31 + 31/31 Android tests**, pinned signing identity, and actual approved reset followed by same-key higher-version private-data retention: [44447692351](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44447692351). This does not certify HiOS/PUBG/Blood Strike survival or all requested features.
 

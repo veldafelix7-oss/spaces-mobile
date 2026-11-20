@@ -2,7 +2,7 @@
 
 ## Stability repair 0.1.3 (candidate)
 
-- Full exact-source gates must pass after the report UI selector correction; do not deliver the failed candidate. Source has 79 JVM cases and 43 Android cases.
+- Exact source `bafbe42a296cdd886750e89f55029882e88c5f0c` passed all gates in [44741557154](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44741557154): 79 JVM and 43 Android cases in two consecutive suites, build/lint, pinned identity, same-key actual update and draft preparation. The earlier failed run belongs to superseded source `24cfb82`, not this candidate.
 - Two consecutive full suites remain mandatory without a failed-suite retry. Per-suite wall-clock bound is 300 seconds for the >60-second real-background/PSS fixture, plus the existing native first-touch/dock/focus assertions.
 - New coverage: bounded/torn/failing sample journals, session exit attribution, legacy history migration, summary-only preferences, archive pruning, draft/profile/journal preservation, failed-save recovery, background Activity release, report readability/scrolling and on-demand charts.
 - Actual install gate seeds old-schema history/profile/active-draft under published 0.1.2, updates to the candidate, runs the app storage assertions, updates to the higher-version probe, and rechecks them. Update mode must not uninstall or clear data.
