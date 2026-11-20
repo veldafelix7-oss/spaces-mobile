@@ -1,15 +1,23 @@
-# spaces : mobile — 0.1.3 stability candidate (not final)
+# spaces : mobile — 0.1.3 stability test preview (not final)
 
-Repairs only. No downscale, new tuning, recording or WhatsApp shortcut. Same `.preview2` package and pinned key, code 4 updating published 0.1.2/code 3 without uninstall/reset. All CI gates passed for `bafbe42`; **this candidate remains unpublished and is not a phone-validated build**. Do not install from a CI draft/asset; wait for an explicitly published preview link. No automatic data deletion or new package.
+**Automated checks passed** for exact source `bafbe42a296cdd886750e89f55029882e88c5f0c`: [run 44741557154](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44741557154) — build/lint, 79 JVM tests, 43 Android instrumentation tests in two consecutive suites, pinned signing identity, and same-key update/data-retention verification. **Manual TECNO/HiOS, Shizuku and gameplay validation remain pending.** This is a test preview, not a final app or an FPS/stability guarantee.
 
-- Reduce background allocation: disk-backed bounded sample journal instead of growing whole-draft JSON rewrites. History samples move to private atomic files; metadata remains small. Existing preview history/drafts/profiles/settings journals are preserved. Interrupted persistence remains recoverable.
-- Release the stopped Activity's UI/icon cache. Load only the requested history graph, under **Grafik & laporan sesi**, instead of retaining every graph during gameplay.
-- Clean Indonesian/English reports: session game/ID/times, historical sidebar evidence vs current status, own-process Android exit reason, sampled spaces PSS estimates, clear profile/readback/recovery outcomes. Old-session evidence cannot be borrowed from another game or a normal later process exit.
-- Harden existing Shizuku binding timeout/death handling and reject main-thread shell execution. No new privileged commands; real HiOS/Shizuku effects still need device validation.
+[Download 0.1.3 Android test preview](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.3-bafbe42/spaces-mobile-preview.apk) · [SHA-256](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.3-bafbe42/SHA256SUMS.txt). APK: 2,594,041 bytes; SHA-256 `6d2a92c98e72ac862bea145bb54d1e5e458920593e3e3892ad4e087511e22242`.
 
-The user supplied Android evidence of a low-memory **spaces** process exit while PUBG continued running. This repair does **not** prove which allocation caused that kill, that a leak existed, or that Android cannot kill the new build. Not a verified FPS/battery improvement. [Evidence and remaining phone validation](MEMORY-STABILITY.md).
+**Direct in-place update from published 0.1.2/code 3:** same `id.veldafelix.spaces.preview2` package and pinned signing key; versionCode 4. End and recover any active session first. Download, then install over 0.1.2; **do not uninstall, clear data or reset**. CI seeded old-format history, profile, active draft and journal, and verified those persisted across the candidate and a higher-version probe. The probe itself is CI-only and must not be installed. If still using old-key 0.1.1, that version is not directly updatable; follow the one-time migration/reset instructions only if applicable and only after recovering its sessions.
+
+Repair-only changes. No downscale, FPS meter, cleaner/freezer, EQ, extra tuning, screen recording or WhatsApp shortcut.
+
+- Reduce avoidable background allocation/work: bounded disk-backed sample journal, serial worker/backpressure and private atomic session archives instead of rewriting growing draft/history preferences each tick. Keep current and legacy session data recoverable.
+- Release stopped Activity UI/icon retention. Load only the selected history graph.
+- Improve selectable/scrollable Indonesian/English reports: game/session identity and times, saved evidence versus current status, historical sidebar evidence, own-process Android exit reason, and sampled PSS with explicit limitations. Clarify session end mode and saved heartbeat.
+- Harden existing Shizuku binding invalidation/timeout handling; no additional privileged commands or tuning.
+
+The incident evidence says Android reported a low-memory **spaces-process** exit while PUBG continued running. It does not identify the largest RAM consumer, establish a spaces leak, prove PUBG was responsible for memory pressure, or certify the repair on HiOS. No FPS/battery improvement is claimed. [Evidence and scope](MEMORY-STABILITY.md) · [manual phone validation checklist](TESTING.md).
 
 ---
+
+
 
 ## Previous 0.1.2 test preview (historical)
 

@@ -31,7 +31,7 @@ After the user reported setup complete, full [44445695936](https://github.com/ve
 3. Name: `SPACES_PREVIEW_SIGNING_BUNDLE`. Value: the **entire JSON file content**, not its Drive link. Save it privately on GitHub; do not send the value in chat.
 4. Tell the agent setup is done. Run full Android CI, not just the read-only audit. If the bundle does not match the pinned public certificate, signing must stay blocked.
 
-Exact repair candidate `bafbe42a296cdd886750e89f55029882e88c5f0c` passed the same-package/pinned-key update and legacy-history/draft/profile continuity gates in run `44741557154`. This prepared a CI draft only; it did not publish a release or authorize a reset. The 0.1.2/code 3 public release remains the installable baseline until a preview is explicitly published.
+Exact repair candidate `bafbe42a296cdd886750e89f55029882e88c5f0c` passed the same-package/pinned-key update and legacy-history/draft/profile continuity gates in run `44741557154`. This is published as test preview [`preview-0.1.3-bafbe42`](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.3-bafbe42), SHA-256 `6d2a92c98e72ac862bea145bb54d1e5e458920593e3e3892ad4e087511e22242`. It updates 0.1.2/code 3 in place and requires no reset/uninstall. It remains a phone-validation preview, not a final release.
 
 The exact revised source `8830907` has passed and is now a published test preview. Do **not** uninstall before downloading it and ending/recovering sessions in all old phone apps; earlier green source is not enough for later runtime changes. See [phone reset checklist](PHONE-RESET.md).
 

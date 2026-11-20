@@ -30,7 +30,7 @@ For every row record pass/fail, actual result, app version and date. Never recor
 - [ ] All three tabs scroll and remain readable; ID/EN works; no haptic feedback.
 - [ ] Add only installed Flash/Blood Strike; reject other apps/missing games; remove/re-add persists.
 - [ ] Force-close/reopen maintains profiles.
-- [ ] 0.1.1 isolated preview installs alongside 0.1.0; old data stays present, new collection/permissions configured separately. End/recover old sessions first.
+- [ ] Historical reset/migration: 0.1.1 isolated preview installs alongside 0.1.0; old data stays present, new collection/permissions configured separately. This does not apply to 0.1.2→0.1.3.
 - [ ] After the one-time user-approved reset, same-key higher-version APK updates retain local settings; wrong key fails safely. Debug/release must not add different application IDs. Current 0.1.1 cannot directly update to the new key.
 - [ ] Before reset/uninstall, all old sessions are ended and recovery is complete. Fresh data/no import is expected only after the approved reset; never erase an active recovery journal. [Phone checklist](PHONE-RESET.md).
 
@@ -65,7 +65,7 @@ For every row record pass/fail, actual result, app version and date. Never recor
 - [ ] Calls/messages silent, alarms permitted, original DND returns. Check normal calls and WA separately.
 - [ ] WA continues receiving messages; there is no WA shortcut/recorder.
 - [ ] Tap/swipe open, drag handle left/right/top, reopen panel after rotation, close restores touch access to game.
-- [ ] Top tab approaches the physical edge when system bars are hidden; visible status/cutout protection remains, and its glyph center stays outside mandatory gestures. Check transient status bars and both landscape rotations; notification swipe must still work. Test first/repeated chevron-center taps at all three docks. Use published 0.1.2 test preview only after the approved reset and old-session recovery checklist.
+- [ ] Top tab approaches the physical edge when system bars are hidden; visible status/cutout protection remains, and its glyph center stays outside mandatory gestures. Check transient status bars and both landscape rotations; notification swipe must still work. Test first/repeated chevron-center taps at all three docks. Use the published 0.1.3 same-key test preview as an in-place update from 0.1.2; end/recover sessions first, do not uninstall or clear data.
 - [ ] Open panel takes input focus only while open. Game input/focus/audio resume after arrow or Back; check each game does not unexpectedly pause/reload.
 - [ ] Metrics visible only inside panel. Battery temp agrees with public battery data; RAM is system available RAM.
 - [ ] FPS explicitly unavailable; no simulated values.
