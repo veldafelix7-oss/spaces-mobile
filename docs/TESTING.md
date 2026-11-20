@@ -1,5 +1,13 @@
 # Test plan — report evidence, not assumptions
 
+## Stability repair 0.1.3 (candidate)
+
+- Full exact-source gates must pass after the report UI selector correction; do not deliver the failed candidate. Source has 79 JVM cases and 43 Android cases.
+- Two consecutive full suites remain mandatory without a failed-suite retry. Per-suite wall-clock bound is 300 seconds for the >60-second real-background/PSS fixture, plus the existing native first-touch/dock/focus assertions.
+- New coverage: bounded/torn/failing sample journals, session exit attribution, legacy history migration, summary-only preferences, archive pruning, draft/profile/journal preservation, failed-save recovery, background Activity release, report readability/scrolling and on-demand charts.
+- Actual install gate seeds old-schema history/profile/active-draft under published 0.1.2, updates to the candidate, runs the app storage assertions, updates to the higher-version probe, and rechecks them. Update mode must not uninstall or clear data.
+- Shizuku actual binder/HiOS effects and PUBG load are NOT emulated by these fixtures. Main-thread rejection, permission handling and command policy do not certify real hardware performance.
+
 ## Automated (CI)
 - JVM: command allowlist, injection rejection, bounds, package restrictions, mode parsing, launch/exit grace, compare-before-restore.
 - Android lint and debug compilation; instrumentation APK compilation.

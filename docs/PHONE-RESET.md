@@ -1,3 +1,11 @@
+# Pembaruan tanpa reset — kandidat 0.1.3
+
+Jika sudah memakai **0.1.2**, revisi 0.1.3 disiapkan sebagai **update langsung** dengan paket/kunci yang sama. **Jangan uninstall, hapus data, atau mengulangi reset.** Akhiri/pulihkan sesi lebih dulu dan pasang hanya setelah link test preview yang lolos seluruh pemeriksaan tersedia. Riwayat lama, profil dan draft sesi harus tetap terbaca; tidak ada penggabungan otomatis dengan paket 0.1.0 yang berbeda.
+
+Bagian di bawah adalah **arsip perpindahan sekali ke 0.1.2**, bukan instruksi reset untuk update 0.1.3.
+
+---
+
 # Jalur satu aplikasi dari HP — test preview 0.1.2 tersedia
 
 Status: pengguna mengizinkan mulai ulang tanpa koleksi/profil/riwayat lama dan hanya memakai HP. **Test preview 0.1.2 sudah lolos tes otomatis dan tersedia**, bukan aplikasi final atau jaminan masalah HiOS sudah hilang. [Unduh APK](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.2-8830907/spaces-mobile-preview.apk) · [hasil tes](TEST-RESULTS.md). **Jangan uninstall sebelum langkah pemulihan di bawah selesai dan APK tersimpan di HP.**

@@ -109,10 +109,10 @@ public final class SessionDiagnostics {
         out.append("\nGame: ").append(game==null?s.t("Belum tercatat","Not recorded"):game.title)
             .append("\n").append(s.t("Mulai: ","Started: ")).append(time(data.optLong("start")));
         if(!id.isEmpty()) out.append("\n").append(s.t("Kode sesi: ","Session ID: ")).append(id);
-        out.append("\n").append(s.t("Cara mengakhiri: ","End mode: ")).append(data.optBoolean("auto_end")?s.t("Deteksi otomatis (opsional)","Automatic detection (opt-in)"):s.t("Manual","Manual"));
-        out.append("\n\n").append(s.t("CATATAN TERAKHIR","LAST RECORDED STATE"))
+        out.append("\n").append(s.t("Mode pengakhiran: ","Session end mode: ")).append(data.optBoolean("auto_end")?s.t("Deteksi otomatis (opsional)","Automatic detection (opt-in)"):s.t("Manual","Manual"));
+        out.append("\n\n").append(s.t("BUKTI TERSIMPAN TERAKHIR","LAST SAVED EVIDENCE"))
             .append("\n").append(eventLabel(s,data.optString("event"))).append("\n").append(time(data.optLong("event_at")))
-            .append("\n").append(s.t("Sampel tersimpan: ","Sample saved: ")).append(time(data.optLong("heartbeat")))
+            .append("\n").append(s.t("Heartbeat tersimpan: ","Saved heartbeat: ")).append(time(data.optLong("heartbeat")))
             .append("\n").append(s.t("Sidebar: ","Sidebar: ")).append(overlayLabel(s,data.optString("overlay")))
             .append("\n").append(s.t("Diperiksa: ","Checked: ")).append(time(data.optLong("overlay_at")));
         if(data.optBoolean("sample_error")) out.append("\n").append(s.t("Sampel terakhir gagal disimpan; grafik mungkin tidak lengkap.","Latest sample could not be saved; chart may be incomplete."));

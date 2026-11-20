@@ -80,10 +80,12 @@ public class AppSmokeTest {
     }
     @Test public void sessionReportIsCompactScrollableAndClearlyAttributesTheGame() throws Exception {
         Store store=new Store(context);
+        long start=1794996000000L; // 18 Nov 2026, 10:00 UTC; realistic, fixed screenshot evidence.
         store.p.edit().putString("active_game","com.tencent.igfit").putString("session_id",java.util.UUID.randomUUID().toString())
-            .putLong("active_start",1000).putString("session_last_event","running").putString("session_overlay_status","attached")
-            .putBoolean("session_finished",true).putInt("session_exit_reason",android.app.ApplicationExitInfo.REASON_LOW_MEMORY).putLong("session_exit_at",5000)
-            .putLong("session_pss_kb",20000).putLong("session_pss_first_kb",19000).putLong("session_pss_peak_kb",22000).commit();
+            .putLong("active_start",start).putString("session_last_event","interrupted").putLong("session_event_at",start+180000)
+            .putLong("session_heartbeat",start+210000).putString("session_overlay_status","attached").putLong("session_overlay_at",start+210000)
+            .putBoolean("session_finished",false).putInt("session_exit_reason",android.app.ApplicationExitInfo.REASON_LOW_MEMORY).putLong("session_exit_at",start+222000)
+            .putLong("session_pss_kb",20000).putLong("session_pss_first_kb",19000).putLong("session_pss_peak_kb",22000).putLong("session_memory_at",start+210000).commit();
         click("Perangkat");click("Detail sesi terakhir / sidebar hilang");
         android.app.AlertDialog dialog=reportWindow();assertNotNull(dialog);inst.waitForIdleSync();
         inst.runOnMainSync(()->{
@@ -91,6 +93,9 @@ public class AppSmokeTest {
             TextView body=dialog.getWindow().getDecorView().findViewWithTag("session_report_body");assertNotNull(body);assertTrue(body.isShown());
             assertTrue(body.getText().toString(),body.getText().toString().contains("PUBGM FLASH"));assertTrue(body.getText().toString(),body.getText().toString().contains("proses spaces karena memori rendah"));
             assertFalse(body.getText().toString().contains("attached"));assertTrue(body.isTextSelectable());
+            assertTrue(body.getText().toString().contains("18 Nov 2026"));assertFalse(body.getText().toString().contains("1970"));
+            assertTrue(body.getText().toString().contains("BUKTI TERSIMPAN TERAKHIR"));assertTrue(body.getText().toString().contains("Heartbeat tersimpan:"));
+            assertTrue(body.getText().toString().contains("KONDISI SEKARANG"));assertTrue(body.getText().toString().contains("bukan game"));
             assertEquals(13f,body.getTextSize()/context.getResources().getDisplayMetrics().scaledDensity,.1f);
             assertTrue("Long evidence must scroll rather than hide below buttons",scroll.canScrollVertically(1));
         });
