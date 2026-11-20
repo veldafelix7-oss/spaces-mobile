@@ -7,6 +7,7 @@ import id.veldafelix.spaces.MainActivity;
 import id.veldafelix.spaces.Store;
 import id.veldafelix.spaces.core.GameSpec;
 import id.veldafelix.spaces.core.SessionExitMonitor;
+import id.veldafelix.spaces.core.SampleJournal;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -20,7 +21,8 @@ public final class SessionService extends Service {
     private boolean autoEnd;
     private int overlayRepairAttempts=0;
     private long overlayAttachAt;
-    private JSONArray samples=new JSONArray();
+    private SampleJournal sampleJournal;
+    private long memoryAt;
     private final Handler main=new Handler(Looper.getMainLooper());
     private OverlayController overlay;
     private volatile boolean ending=false,destroyed=false;
@@ -28,11 +30,24 @@ public final class SessionService extends Service {
     private final Runnable tick=new Runnable() {
         @Override public void run() {
             if(ending || destroyed || !initialized) return;
-            JSONObject point=Telemetry.sample(SessionService.this);
-            if(samples.length()>=1080) { JSONArray next=new JSONArray(); for(int i=1;i<samples.length();i++) next.put(samples.optJSONObject(i)); samples=next; }
-            samples.put(point);
+            final JSONObject point=Telemetry.sample(SessionService.this);
+            // Queue at most one sample; the next tick is scheduled only after persistence completes.
+            Engine.WORK.execute(()->{
+                if(ending || destroyed) return;
+                try {
+                    sampleJournal.append(point.toString());
+                    long wall=point.optLong("at",System.currentTimeMillis());
+                    store.p.edit().putString("live_sample",point.toString()).putLong("session_heartbeat",wall).remove("session_sample_error").commit();
+                    long now=SystemClock.elapsedRealtime();
+                    if(memoryAt==0 || now-memoryAt>=60000) { SessionDiagnostics.sampleMemory(SessionService.this);memoryAt=now; }
+                } catch(Exception error) { store.p.edit().putBoolean("session_sample_error",true).commit(); }
+                main.post(()->finishTick(point));
+            });
+        }
+    };
+    private void finishTick(JSONObject point) {
+            if(ending || destroyed || !initialized) return;
             long wall=System.currentTimeMillis();
-            store.p.edit().putString("live_sample",point.toString()).putString("draft_samples",samples.toString()).putLong("session_heartbeat",wall).apply();
             checkOverlay();
             if(overlay!=null) overlay.update(point);
             if(autoEnd) {
@@ -45,9 +60,8 @@ public final class SessionService extends Service {
                 long now=SystemClock.elapsedRealtime();
                 if(exitMonitor.shouldEnd(now,now-startElapsed,true,allowed && observed,screenUsable,overlay!=null && overlay.isOpen())) { end("left_game");return; }
             }
-            main.postDelayed(this,10000);
-        }
-    };
+            main.postDelayed(tick,10000);
+    }
     @Override public void onCreate() { super.onCreate();store=new Store(this); }
     @Override public int onStartCommand(Intent intent,int flags,int startId) {
         if(intent==null) { stopSelf();return START_NOT_STICKY; }
@@ -80,8 +94,13 @@ public final class SessionService extends Service {
         startForeground(41,n);running=true;
         boolean saved=store.p.edit().putBoolean("active",true).putString("active_game",game).putLong("active_start",startWall)
             .putBoolean("session_auto_end",autoEnd).putInt("session_process_pid",android.os.Process.myPid()).putLong("session_heartbeat",0)
-            .putString("session_overlay_status","starting").putString("draft_samples","[]").commit();
+            .putString("session_overlay_status","starting").putLong("session_overlay_at",startWall)
+            .putString("session_id",java.util.UUID.randomUUID().toString()).putInt("draft_format",1).remove("draft_samples")
+            .remove("overlay_error").remove("last_engine_log").remove("session_sample_error").remove("session_exit_reason").remove("session_exit_at")
+            .remove("session_pss_first_kb").remove("session_pss_kb").remove("session_pss_peak_kb").remove("session_memory_at")
+            .putBoolean("session_finished",false).remove("session_closed_at").commit();
         if(!saved) { running=false;stopForeground(STOP_FOREGROUND_REMOVE);stopSelf();return START_NOT_STICKY; }
+        sampleJournal=store.draftJournal();
         SessionDiagnostics.note(this,"starting");
         Engine.WORK.execute(()->{
             if(ending || destroyed) return;
@@ -97,7 +116,7 @@ public final class SessionService extends Service {
         return START_NOT_STICKY;
     }
     private void overlayStatus(String status) {
-        if(!status.equals(store.p.getString("session_overlay_status",""))) store.p.edit().putString("session_overlay_status",status).apply();
+        if(!status.equals(store.p.getString("session_overlay_status",""))) store.p.edit().putString("session_overlay_status",status).putLong("session_overlay_at",System.currentTimeMillis()).apply();
     }
     private void attachOverlay(boolean userRequested) {
         if(overlay!=null) { overlay.hide();overlay=null; }
@@ -131,8 +150,7 @@ public final class SessionService extends Service {
     private void end(String reason) {
         if(ending || destroyed) return;ending=true;main.removeCallbacks(tick);
         SessionDiagnostics.note(this,reason);
-        if(overlay!=null) overlay.hide();
-        final JSONArray collected=samples;
+        if(overlay!=null) { overlay.hide();overlay=null; }overlayStatus("session_ended");
         Engine.WORK.execute(()->{
             String recovery;
             try { recovery=new Engine(this).restore(); }
@@ -140,11 +158,17 @@ public final class SessionService extends Service {
             try {
                 JSONObject summary=new JSONObject();summary.put("game",game);summary.put("start",startWall);
                 summary.put("duration",Math.max(0,SystemClock.elapsedRealtime()-startElapsed));
-                summary.put("reason",reason);summary.put("samples",collected);summary.put("auto_end",autoEnd);
+                summary.put("id",store.p.getString("session_id",""));
+                summary.put("reason",reason);summary.put("samples",store.draftSamples());summary.put("auto_end",autoEnd);
+                store.p.edit().putBoolean("session_finished",true).putLong("session_closed_at",System.currentTimeMillis()).commit();
+                summary.put("diagnostics",SessionDiagnostics.snapshot(this));
                 summary.put("engine",store.p.getString("last_engine_log",""));summary.put("recovery",recovery);
                 store.saveSession(summary);
-            } catch(Exception ignored) { }
-            store.p.edit().putBoolean("active",false).remove("draft_samples").commit();
+                store.p.edit().putBoolean("active",false).commit();store.clearDraft();
+            } catch(Exception error) {
+                // Keep active/draft/journal for explicit recovery if persistence fails.
+                SessionDiagnostics.note(this,"save_failed");
+            }
             main.post(()->{ running=false;stopForeground(STOP_FOREGROUND_REMOVE);stopSelf(); });
         });
     }

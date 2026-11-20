@@ -8,3 +8,4 @@ signing.properties
 .env
 artifacts/
 .local/
+google_drive/

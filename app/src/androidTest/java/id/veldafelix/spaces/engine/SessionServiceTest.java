@@ -39,6 +39,7 @@ public class SessionServiceTest {
         c.stopService(new Intent(c,SessionService.class));
         await("Previous service must stop",()->!SessionService.running,5000);
         Engine.WORK.submit(()->{}).get(15,TimeUnit.SECONDS);inst.runOnMainSync(()->{});
+        store.clearHistory();
         store.p.edit().clear().putBoolean("focus",false).putBoolean("overlay",true).commit();
         store.add("com.tencent.igfit",true);
         assertTrue(inst.getUiAutomation().setRotation(android.app.UiAutomation.ROTATION_FREEZE_90));
@@ -83,10 +84,20 @@ public class SessionServiceTest {
         shell("input keyevent 3"); // Real launcher switch; do not confuse this with gameplay certification.
         await("Service must keep sampling past the old 30-second exit grace",()->store.p.getLong("session_heartbeat",0)>=first+31000,47000);
         assertTrue(SessionService.running);assertTrue(store.p.getBoolean("active",false));
+        java.lang.reflect.Field page=MainActivity.class.getDeclaredField("page");page.setAccessible(true);
+        inst.runOnMainSync(()->{ try { assertNull("Background activity must release history/UI",page.get(activity)); } catch(IllegalAccessException e) { throw new AssertionError(e); } });
+        assertFalse("No whole-session JSON in preferences",store.p.contains("draft_samples"));
+        assertTrue(store.draftSamples().length()>=4);
+        assertTrue(store.p.getLong("session_pss_kb",0)>0);
+        android.os.Bundle evidence=new android.os.Bundle();
+        evidence.putString("spaces_diagnostic","Background fixture PSS KB: first="+store.p.getLong("session_pss_first_kb",0)+", last="+store.p.getLong("session_pss_kb",0)+", peak="+store.p.getLong("session_pss_peak_kb",0)+"; not PUBG/HiOS certification");inst.sendStatus(0,evidence);
         assertEquals("attached",store.p.getString("session_overlay_status",""));
         assertEquals(0,store.history().length());
         stopNormally();assertEquals(1,store.history().length());
         assertEquals("manual",store.history().getJSONObject(0).getString("reason"));
+        assertEquals("com.tencent.igfit",store.history().getJSONObject(0).getJSONObject("diagnostics").getString("game"));
+        assertFalse(store.history().getJSONObject(0).has("samples"));
+        assertTrue(store.sessionSamples(store.history().getJSONObject(0)).length()>=4);
     }
     @Test public void interruptedServicePreservesJournalDraftAndLocalEvidence() throws Exception {
         start();store.p.edit().putString("journal","fixture-corrupt-journal").commit();
@@ -94,7 +105,7 @@ public class SessionServiceTest {
         await("Service destroyed",()->!SessionService.running,5000);
         assertTrue(store.p.getBoolean("active",false));
         assertEquals("fixture-corrupt-journal",store.p.getString("journal",""));
-        assertTrue(store.p.contains("draft_samples"));assertTrue(new Engine(c).pending());
+        assertTrue(store.draftSamples().length()>0);assertFalse(store.p.contains("draft_samples"));assertTrue(new Engine(c).pending());
         assertEquals("service_destroyed",store.p.getString("session_last_event",""));
         assertEquals("service_stopped",store.p.getString("session_overlay_status",""));
         assertEquals(0,store.history().length());assertFalse(SessionDiagnostics.report(c).isEmpty());

@@ -45,7 +45,7 @@ else
   adb install -r apks/debug/app-debug.apk
   verify_data
 fi
-# Prove the new private key supports a genuine higher-version update (3 -> 4).
+# Prove the new private key supports a genuine higher-version update (candidate -> candidate + 1).
 # The probe is CI-only and must never be published as the user APK.
 adb shell am force-stop "$PACKAGE"
 adb install -r probe/app-update-probe.apk

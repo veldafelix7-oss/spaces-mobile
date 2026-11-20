@@ -32,6 +32,7 @@ public final class MainActivity extends Activity {
     private final Map<String,android.graphics.drawable.Drawable> iconCache=new HashMap<>();
     private boolean registered=false,launching=false,resumed=false;
     private String pendingLaunch;
+    private AlertDialog reportWindow;
     private final Handler main=new Handler(Looper.getMainLooper());
     private final BroadcastReceiver sessionReady=new BroadcastReceiver() {
         @Override public void onReceive(Context c,Intent intent) {
@@ -40,8 +41,8 @@ public final class MainActivity extends Activity {
         }
     };
     private final Shizuku.OnRequestPermissionResultListener shizukuResult=(request,grant)->runOnUiThread(()->{
-        if(grant==PackageManager.PERMISSION_GRANTED) PrivilegeBridge.bind(this);
-        render();
+        if(grant==PackageManager.PERMISSION_GRANTED) PrivilegeBridge.bind(getApplicationContext());
+        if(resumed) render();
     });
     private final Shizuku.OnBinderReceivedListener binderReceived=()->runOnUiThread(()->{ PrivilegeBridge.bind(this); if(resumed) render(); });
     private final Shizuku.OnBinderDeadListener binderDead=()->runOnUiThread(()->{ if(resumed) render(); });
@@ -68,6 +69,18 @@ public final class MainActivity extends Activity {
     @Override public void onWindowFocusChanged(boolean focused) { super.onWindowFocusChanged(focused);if(focused) immersive(); }
     @Override protected void onResume() { super.onResume(); resumed=true; installationCache.clear();iconCache.clear();render(); }
     @Override protected void onPause() { resumed=false; super.onPause(); }
+    @Override protected void onStop() {
+        super.onStop();releaseUi();
+    }
+    private void releaseUi() {
+        if(reportWindow!=null) { reportWindow.dismiss();reportWindow=null; }
+        page=null;pageScroll=null;Arrays.fill(navigation,null);iconCache.clear();installationCache.clear();
+        setContentView(new FrameLayout(this));
+    }
+    @Override public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        if(!resumed && level>=android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) releaseUi();
+    }
     @Override protected void onSaveInstanceState(Bundle b) { super.onSaveInstanceState(b); b.putInt("tab",tab); }
     @Override protected void onDestroy() {
         main.removeCallbacksAndMessages(null);
@@ -101,7 +114,7 @@ public final class MainActivity extends Activity {
         try { return getPackageManager().getPackageInfo(id,0).versionName; } catch(Exception e) { return "—"; }
     }
     private void render() {
-        if(isFinishing() || store==null) return;
+        if(isFinishing() || isDestroyed() || !resumed || store==null) return;
         FrameLayout root=new FrameLayout(this); root.addView(new Glass.Background(this),new FrameLayout.LayoutParams(-1,-1));
         LinearLayout shell=Glass.row(this); shell.setGravity(Gravity.TOP); shell.setPadding(dp(14),dp(14),dp(20),dp(10));
         root.addView(shell,new FrameLayout.LayoutParams(-1,-1));
@@ -128,7 +141,7 @@ public final class MainActivity extends Activity {
         heading.addView(text(t("RUANG BERMAIN PRIBADI","YOUR PERSONAL GAME SPACE"),9,Glass.MUTED,true));
         header.addView(heading,new LinearLayout.LayoutParams(0,-2,1));
         String state=PrivilegeBridge.state();
-        TextView status=text("●  "+(state.equals("ready")?t("Shizuku terhubung","Shizuku connected"):state.equals("permission")?t("Shizuku perlu izin","Shizuku needs permission"):t("Shizuku belum terhubung","Shizuku not connected")),10,Glass.ACCENT,true);
+        TextView status=text("●  "+SessionDiagnostics.shizukuLabel(store),10,Glass.ACCENT,true);
         status.setPadding(dp(12),dp(9),dp(12),dp(9)); status.setBackground(Glass.surface(0x99FFFFFF,dp(20)));
         status.setMinHeight(dp(44));status.setGravity(Gravity.CENTER);status.setOnClickListener(v->selectTab(2)); header.addView(status);
         body.addView(header); Glass.gap(body,17);
@@ -298,17 +311,20 @@ public final class MainActivity extends Activity {
                 try {
                     JSONObject summary=new JSONObject(); summary.put("game",store.p.getString("active_game",""));
                     long start=store.p.getLong("active_start",System.currentTimeMillis());
-                    JSONArray samples=new JSONArray(store.p.getString("draft_samples","[]"));
+                    JSONArray samples=store.draftSamples();
                     long last=samples.length()==0?start:samples.getJSONObject(samples.length()-1).optLong("at",start);
                     summary.put("start",start); summary.put("duration",Math.max(0,last-start)); summary.put("samples",samples);
+                    SessionDiagnostics.noteRecovery(this);
+                    summary.put("id",store.p.getString("session_id",""));
                     summary.put("reason","interrupted"); summary.put("engine",store.p.getString("last_engine_log","")); summary.put("recovery",log);
+                    summary.put("diagnostics",SessionDiagnostics.snapshot(this));
                     store.saveSession(summary);
-                } catch(Exception ignored) { }
-                store.p.edit().putBoolean("active",false).remove("draft_samples").commit();
+                    store.p.edit().putBoolean("active",false).commit();store.clearDraft();
+                } catch(Exception error) { runOnUiThread(()->toast(t("Riwayat belum tersimpan. Data pemulihan tetap disimpan; coba lagi.","History not saved. Recovery data was kept; try again."))); }
             }
             boolean pending=engine.pending();
-            runOnUiThread(()->{ if(!isFinishing()) { render(); info(t("Pemulihan","Recovery"),
-                (pending?t("Masih ada perubahan yang menunggu. Sambungkan Shizuku/periksa izin, lalu ulangi.\n\n","Some changes are pending. Reconnect Shizuku/check permissions, then retry.\n\n"):t("Pemeriksaan selesai.\n\n","Check complete.\n\n"))+log); } });
+            runOnUiThread(()->{ if(!isFinishing() && resumed) { render(); reportDialog(t("Pemulihan","Recovery"),
+                (pending?t("Masih ada perubahan yang menunggu. Sambungkan Shizuku/periksa izin, lalu ulangi.\n\n","Some changes are pending. Reconnect Shizuku/check permissions, then retry.\n\n"):t("Pemeriksaan selesai.\n\n","Check complete.\n\n"))+SessionDiagnostics.engineReport(store,log,true),null); } });
         });
     }
     private void section(String title,String subtitle) {
@@ -353,7 +369,7 @@ public final class MainActivity extends Activity {
         section(t("Batas kemampuan versi ini","This version's capability limits"),t("Fitur yang belum tervalidasi tetap dinonaktifkan.","Unverified features remain disabled."));
         LinearLayout limits=Glass.card(this);
         limits.addView(text(t("• Downscale render: belum diaktifkan sebelum validasi HiOS.\n• FPS/1% low: belum tersedia; tidak disimulasikan.\n• Driver GPU, EQ lintas aplikasi, dan tuning sentuh: tidak diklaim didukung.\n• Tidak ada debloat, kompilasi AOT otomatis, atau pemutusan internet aplikasi lain.\n• Proteksi suhu dan file game tidak disentuh.","• Render downscale: disabled pending HiOS validation.\n• FPS/1% low: unavailable; never simulated.\n• GPU drivers, global EQ and touch tuning: not claimed as supported.\n• No debloat, automatic AOT compilation or app network blocking.\n• Thermal protections and game files remain untouched."),12,Glass.MUTED,false)); page.addView(limits);
-        Glass.gap(page,12); page.addView(button(t("Lihat hasil engine terakhir","View last engine results"),false,()->info("Engine",store.p.getString("last_engine_log",t("Belum ada sesi.","No session yet.")))));
+        Glass.gap(page,12); page.addView(button(t("Lihat hasil engine terakhir","View last engine results"),false,()->reportDialog(t("Hasil profil terakhir","Last profile results"),SessionDiagnostics.engineReport(store,store.p.getString("last_engine_log",""),false),null)));
     }
     private void addHz(LinearLayout row,String game,String value,String label) {
         row.addView(button(label,store.profile(game,"refresh","system").equals(value),()->{ store.setProfile(game,"refresh",value); render(); }),new LinearLayout.LayoutParams(0,-2,1));
@@ -387,7 +403,7 @@ public final class MainActivity extends Activity {
         titleRow(t("Perangkat & sesi","Device & sessions"),android.os.Build.MANUFACTURER+" "+android.os.Build.MODEL+" · Android "+Build.VERSION.RELEASE,null,null);
         LinearLayout permissions=Glass.card(this);
         String state=PrivilegeBridge.state();
-        permission(permissions,"Shizuku",state.equals("ready")?t("Terhubung · izin diberikan","Connected · authorized"):state.equals("permission")?t("Terhubung · butuh izin","Connected · permission needed"):t("Belum terhubung","Not connected"),this::shizuku);
+        permission(permissions,"Shizuku",SessionDiagnostics.shizukuLabel(store),this::shizuku);
         permission(permissions,t("Panel di atas game","Display over games"),Settings.canDrawOverlays(this)?t("Diizinkan","Allowed"):t("Opsional · belum diizinkan","Optional · not allowed"),()->open(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName()))));
         NotificationManager n=getSystemService(NotificationManager.class);
         permission(permissions,t("Jangan Ganggu","Do Not Disturb"),n.isNotificationPolicyAccessGranted()?t("Diizinkan","Allowed"):t("Dibutuhkan untuk Mode Fokus","Required for Focus mode"),()->open(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)));
@@ -398,7 +414,7 @@ public final class MainActivity extends Activity {
             else open(new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()));
         });
         page.addView(permissions);
-        Glass.gap(page,12);page.addView(button(t("Detail sesi terakhir / sidebar hilang","Last session / missing sidebar details"),false,()->info(t("Pemeriksaan sesi","Session evidence"),SessionDiagnostics.report(this))));
+        Glass.gap(page,12);page.addView(button(t("Detail sesi terakhir / sidebar hilang","Last session / missing sidebar details"),false,()->reportDialog(t("Laporan sesi terakhir","Last session report"),SessionDiagnostics.report(this),null)));
         Glass.gap(page,8);page.addView(button(t("Pengaturan baterai/latar belakang aplikasi","App battery/background settings"),false,()->{
             new AlertDialog.Builder(this).setTitle(t("Aktivitas latar belakang","Background activity"))
                 .setMessage(t("Periksa pengaturan baterai/aktivitas latar belakang spaces di HiOS. Pembatasan dapat menghentikan layanan; pengaturan ini tidak menjamin aplikasi selalu hidup. Aplikasi tidak mengubahnya otomatis.","Review spaces battery/background activity settings in HiOS. Restrictions can stop services; settings cannot guarantee survival. The app does not change them automatically."))
@@ -407,32 +423,62 @@ public final class MainActivity extends Activity {
         }));
         Glass.gap(page,12); page.addView(button(t("Periksa & pulihkan pengaturan","Check & restore settings"),false,this::recover));
         section(t("Riwayat sesi","Session history"),t("Maksimal 30 sesi di HP ini. Grafik adalah suhu baterai, bukan FPS.","Up to 30 local sessions. Charts show battery temperature, not FPS."));
-        JSONArray history=store.history();
-        if(history.length()==0) page.addView(text(t("Belum ada sesi. Riwayat muncul setelah selesai main.","No sessions yet. History appears after you finish playing."),12,Glass.MUTED,false));
-        for(int i=0;i<history.length();i++) {
-            JSONObject session=history.optJSONObject(i); if(session==null) continue;
-            GameSpec g=GameSpec.find(session.optString("game"));
-            LinearLayout item=Glass.card(this);
-            item.addView(text((g==null?"Game":g.title)+" · "+session.optLong("duration")/60000+" min",15,Glass.INK,true)); Glass.gap(item,5);
-            String when=new SimpleDateFormat("dd MMM yyyy · HH:mm",Locale.getDefault()).format(new Date(session.optLong("start")));
-            item.addView(text(when+" · "+SessionDiagnostics.eventLabel(store,session.optString("reason")),11,Glass.MUTED,false));
-            JSONArray points=session.optJSONArray("samples");
-            if(points!=null && points.length()>1) {
-                Glass.gap(item,10); item.addView(new SessionChart(this,points),new LinearLayout.LayoutParams(-1,dp(120)));
-                double peak=-999; for(int j=0;j<points.length();j++) { JSONObject p=points.optJSONObject(j); if(p!=null && p.has("temp")) peak=Math.max(peak,p.optDouble("temp")); }
-                if(peak>-999) item.addView(text(t("Suhu baterai puncak: ","Peak battery temperature: ")+String.format(Locale.getDefault(),"%.1f °C",peak),11,Glass.MUTED,false));
-            } else { Glass.gap(item,8); item.addView(text(t("Belum cukup sampel untuk grafik.","Not enough samples for a chart."),11,Glass.MUTED,false)); }
-            Glass.gap(item,8); item.addView(button(t("Detail pengaturan & pemulihan","Settings & recovery details"),false,()->info("Engine",session.optString("engine")+"\n\n"+session.optString("recovery"))));
-            page.addView(item); Glass.gap(page,10);
-        }
-        if(history.length()>0) page.addView(button(t("Hapus riwayat lokal","Delete local history"),false,()->new AlertDialog.Builder(this)
-            .setTitle(t("Hapus seluruh riwayat?","Delete all history?"))
-            .setPositiveButton(t("Hapus","Delete"),(d,w)->{ store.p.edit().remove("history").apply(); render(); }).setNegativeButton(t("Batal","Cancel"),null).show()));
+        LinearLayout historyHost=Glass.column(this);page.addView(historyHost);
+        historyHost.addView(text(t("Memuat riwayat…","Loading history…"),12,Glass.MUTED,false));
+        final LinearLayout requestedPage=page;
+        Engine.WORK.execute(()->{
+            try {
+                JSONArray history=store.history();
+                runOnUiThread(()->{ if(resumed && tab==2 && page==requestedPage) renderHistory(historyHost,history); });
+            } catch(Exception error) {
+                runOnUiThread(()->{ if(resumed && page==requestedPage) { historyHost.removeAllViews();historyHost.addView(text(t("Riwayat belum bisa dibaca. Data lama dipertahankan; jangan hapus data aplikasi.","History could not be read. Original data was kept; do not clear app data."),12,Glass.MUTED,false)); } });
+            }
+        });
         section(t("Tentang spaces","About spaces"),"v"+BuildConfig.VERSION_NAME+" · "+t("Tanpa akun, iklan, atau pelacak.","No accounts, ads or trackers."));
         page.addView(button(t("Buka halaman unduhan pembaruan","Open update downloads"),false,()->open(new Intent(Intent.ACTION_VIEW,Uri.parse("https://github.com/veldafelix7-oss/spaces-mobile/releases")))));
         Glass.gap(page,10); page.addView(button(t("Privasi & batasan","Privacy & limitations"),false,()->info(t("Privasi & batasan","Privacy & limitations"),t(
             "Data sesi disimpan hanya di HP. Tidak ada analitik atau server aplikasi. Tes koneksi opsional menghubungi 1.1.1.1:443; itu bukan ping server game. Tombol pembaruan membuka browser.\n\nGameManager/refresh rate memerlukan Shizuku dan belum tentu meningkatkan FPS. Tidak ada jaminan anti-ban. Jangan matikan proteksi suhu.\n\nFusiMem adalah RAM virtual. Ubah lewat Pengaturan HiOS dan uji terpisah setelah restart. Aplikasi ini tidak mengubahnya otomatis.\n\nJika proses mati/restart, buka aplikasi lalu gunakan pemulihan. Jika Shizuku mati, sambungkan lagi. Tidak ada jaminan pemulihan saat aplikasi tidak berjalan.",
             "Session data stays on your phone. No analytics or app servers. Optional connectivity tests contact 1.1.1.1:443, not a game server. Updates open your browser.\n\nGameManager/refresh settings require Shizuku and may not improve FPS. No anti-ban guarantee. Keep thermal protections enabled.\n\nFusiMem is virtual RAM. Change it in HiOS settings and test separately after reboot. This app does not change it automatically.\n\nAfter process death/reboot, open the app and use recovery. Reconnect Shizuku if necessary. Recovery cannot be guaranteed while the app is not running."))));
+    }
+    private void renderHistory(LinearLayout host,JSONArray history) {
+        host.removeAllViews();
+        if(history.length()==0) host.addView(text(t("Belum ada sesi. Riwayat muncul setelah selesai main.","No sessions yet. History appears after you finish playing."),12,Glass.MUTED,false));
+        for(int i=0;i<history.length();i++) {
+            JSONObject session=history.optJSONObject(i);if(session==null) continue;
+            GameSpec game=GameSpec.find(session.optString("game"));LinearLayout item=Glass.card(this);
+            item.addView(text((game==null?"Game":game.title)+" · "+session.optLong("duration")/60000+" min",15,Glass.INK,true));
+            String when=new SimpleDateFormat("dd MMM yyyy · HH:mm",Locale.getDefault()).format(new Date(session.optLong("start")));
+            item.addView(text(when+" · "+SessionDiagnostics.eventLabel(store,session.optString("reason")),11,Glass.MUTED,false));
+            if(session.has("peak_temp")) item.addView(text(t("Suhu baterai puncak: ","Peak battery temperature: ")+String.format(Locale.getDefault(),"%.1f °C",session.optDouble("peak_temp")),11,Glass.MUTED,false));
+            Glass.gap(item,8);item.addView(button(t("Grafik & laporan sesi","Chart & session report"),false,()->showSession(session)));
+            host.addView(item);Glass.gap(host,10);
+        }
+        if(history.length()>0) host.addView(button(t("Hapus riwayat lokal","Delete local history"),false,()->new AlertDialog.Builder(this)
+            .setTitle(t("Hapus seluruh riwayat?","Delete all history?"))
+            .setPositiveButton(t("Hapus","Delete"),(d,w)->Engine.WORK.execute(()->{ store.clearHistory();runOnUiThread(this::render); })).setNegativeButton(t("Batal","Cancel"),null).show()));
+    }
+    private void showSession(JSONObject session) {
+        Engine.WORK.execute(()->{
+            JSONArray points=store.sessionSamples(session);
+            JSONObject evidence=session.optJSONObject("diagnostics");
+            String report=evidence==null?t("Laporan rinci belum tersedia untuk versi lama.","Detailed evidence is unavailable for this older version."):SessionDiagnostics.format(store,evidence);
+            String body=report+"\n\n"+SessionDiagnostics.engineReport(store,session.optString("engine"),false)+"\n\n"+SessionDiagnostics.engineReport(store,session.optString("recovery"),true);
+            runOnUiThread(()->{ if(resumed && !isFinishing()) reportDialog(t("Grafik & laporan sesi","Chart & session report"),body,points); });
+        });
+    }
+    private void reportDialog(String title,String body,JSONArray points) {
+        if(!resumed || isFinishing()) return;
+        if(reportWindow!=null) reportWindow.dismiss();
+        ScrollView scroll=new ScrollView(this);LinearLayout content=Glass.column(this);content.setPadding(dp(20),dp(6),dp(20),dp(16));scroll.addView(content);
+        if(points!=null && points.length()>1) {
+            content.addView(new SessionChart(this,points),new LinearLayout.LayoutParams(-1,dp(140)));
+            content.addView(text(t("Grafik suhu baterai, bukan FPS.\n","Battery temperature chart, not FPS.\n"),11,Glass.MUTED,false));
+        }
+        TextView message=text(body,13,Glass.INK,false);message.setTextIsSelectable(true);message.setLineSpacing(dp(3),1);content.addView(message);
+        reportWindow=new AlertDialog.Builder(this).setTitle(title).setView(scroll).setPositiveButton(t("Tutup","Close"),null).create();
+        reportWindow.show();
+        android.util.DisplayMetrics screen=getResources().getDisplayMetrics();
+        reportWindow.getWindow().setLayout(Math.min(dp(680),(int)(screen.widthPixels*.9f)),(int)(screen.heightPixels*.86f));
     }
     private void permission(LinearLayout parent,String title,String state,Runnable action) {
         LinearLayout row=Glass.row(this); row.setPadding(0,dp(7),0,dp(7)); LinearLayout words=Glass.column(this);

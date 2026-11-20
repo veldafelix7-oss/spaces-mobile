@@ -1,3 +1,18 @@
+# spaces : mobile — 0.1.3 stability candidate (not final)
+
+Repairs only. No downscale, new tuning, recording or WhatsApp shortcut. **Do not install before all checks pass.** Same `.preview2` package and pinned key, code 4 updating published 0.1.2/code 3 without uninstall/reset. No automatic data deletion or new package.
+
+- Reduce background allocation: disk-backed bounded sample journal instead of growing whole-draft JSON rewrites. History samples move to private atomic files; metadata remains small. Existing preview history/drafts/profiles/settings journals are preserved. Interrupted persistence remains recoverable.
+- Release the stopped Activity's UI/icon cache. Load only the requested history graph, under **Grafik & laporan sesi**, instead of retaining every graph during gameplay.
+- Clean Indonesian/English reports: session game/ID/times, historical sidebar evidence vs current status, own-process Android exit reason, sampled spaces PSS estimates, clear profile/readback/recovery outcomes. Old-session evidence cannot be borrowed from another game or a normal later process exit.
+- Harden existing Shizuku binding timeout/death handling and reject main-thread shell execution. No new privileged commands; real HiOS/Shizuku effects still need device validation.
+
+The user supplied Android evidence of a low-memory **spaces** process exit while PUBG continued running. This repair does **not** prove which allocation caused that kill, that a leak existed, or that Android cannot kill the new build. Not a verified FPS/battery improvement. [Details and pending validation](MEMORY-STABILITY.md).
+
+---
+
+## Previous 0.1.2 test preview (historical)
+
 # spaces : mobile — 0.1.2 test preview (not the final app; one-time reset required)
 
 **Automated gates passed for source `8830907`.** [Run 44447692351](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44447692351): build/lint/**64 JVM tests**, **31/31 + 31/31 Android tests**, pinned signing identity, and actual approved reset followed by same-key 3→4 update retaining private file/preferences with no extra package. This is a **test preview**, not proof that the disappearing-sidebar incident on HiOS has been reproduced or conclusively resolved, and not completion of every requested app feature.
