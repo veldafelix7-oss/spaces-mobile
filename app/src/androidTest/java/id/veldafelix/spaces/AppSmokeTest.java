@@ -87,9 +87,9 @@ public class AppSmokeTest {
         click("Perangkat");click("Detail sesi terakhir / sidebar hilang");
         android.app.AlertDialog dialog=reportWindow();assertNotNull(dialog);inst.waitForIdleSync();
         inst.runOnMainSync(()->{
-            android.widget.ScrollView scroll=findType(dialog.getWindow().getDecorView(),android.widget.ScrollView.class);assertNotNull(scroll);
-            TextView body=findType(scroll,TextView.class);assertNotNull(body);
-            assertTrue(body.getText().toString().contains("PUBGM FLASH"));assertTrue(body.getText().toString().contains("proses spaces karena memori rendah"));
+            android.widget.ScrollView scroll=dialog.getWindow().getDecorView().findViewWithTag("session_report_scroll");assertNotNull(scroll);
+            TextView body=dialog.getWindow().getDecorView().findViewWithTag("session_report_body");assertNotNull(body);assertTrue(body.isShown());
+            assertTrue(body.getText().toString(),body.getText().toString().contains("PUBGM FLASH"));assertTrue(body.getText().toString(),body.getText().toString().contains("proses spaces karena memori rendah"));
             assertFalse(body.getText().toString().contains("attached"));assertTrue(body.isTextSelectable());
             assertEquals(13f,body.getTextSize()/context.getResources().getDisplayMetrics().scaledDensity,.1f);
             assertTrue("Long evidence must scroll rather than hide below buttons",scroll.canScrollVertically(1));
@@ -219,6 +219,12 @@ public class AppSmokeTest {
             Bitmap bitmap=inst.getUiAutomation().takeScreenshot();
             File dir=new File(context.getExternalFilesDir(null),"screenshots"); dir.mkdirs();
             try(FileOutputStream f=new FileOutputStream(new File(dir,name+".png"))) { bitmap.compress(Bitmap.CompressFormat.PNG,100,f); }
+            if(name.equals("05-session-report")) {
+                Bitmap preview=Bitmap.createScaledBitmap(bitmap,720,Math.max(1,bitmap.getHeight()*720/bitmap.getWidth()),true);
+                java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();preview.compress(Bitmap.CompressFormat.JPEG,75,bytes);
+                android.os.Bundle evidence=new android.os.Bundle();evidence.putString("spaces_image",android.util.Base64.encodeToString(bytes.toByteArray(),android.util.Base64.NO_WRAP));inst.sendStatus(0,evidence);
+                if(preview!=bitmap) preview.recycle();
+            }
             bitmap.recycle();
         } catch(Exception e) { throw new AssertionError(e); }
     }

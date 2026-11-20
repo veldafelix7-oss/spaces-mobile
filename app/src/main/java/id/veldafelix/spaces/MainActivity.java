@@ -472,12 +472,12 @@ public final class MainActivity extends Activity {
     private void reportDialog(String title,String body,JSONArray points) {
         if(!resumed || isFinishing()) return;
         if(reportWindow!=null) reportWindow.dismiss();
-        ScrollView scroll=new ScrollView(this);LinearLayout content=Glass.column(this);content.setPadding(dp(20),dp(6),dp(20),dp(16));scroll.addView(content);
+        ScrollView scroll=new ScrollView(this);scroll.setTag("session_report_scroll");LinearLayout content=Glass.column(this);content.setPadding(dp(20),dp(6),dp(20),dp(16));scroll.addView(content);
         if(points!=null && points.length()>1) {
             content.addView(new SessionChart(this,points),new LinearLayout.LayoutParams(-1,dp(140)));
             content.addView(text(t("Grafik suhu baterai, bukan FPS.\n","Battery temperature chart, not FPS.\n"),11,Glass.MUTED,false));
         }
-        TextView message=text(body,13,Glass.INK,false);message.setTextIsSelectable(true);message.setLineSpacing(dp(3),1);content.addView(message);
+        TextView message=text(body,13,Glass.INK,false);message.setTag("session_report_body");message.setTextIsSelectable(true);message.setLineSpacing(dp(3),1);content.addView(message);
         reportWindow=new AlertDialog.Builder(this).setTitle(title).setView(scroll).setPositiveButton(t("Tutup","Close"),null).create();
         reportWindow.show();
         android.util.DisplayMetrics screen=getResources().getDisplayMetrics();
