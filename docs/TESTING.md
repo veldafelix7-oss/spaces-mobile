@@ -1,6 +1,6 @@
 # Test plan — report evidence, not assumptions
 
-## Stability repair 0.1.3 (candidate)
+## Stability repair 0.1.3 baseline and 0.1.4 update candidate
 
 - Exact source `bafbe42a296cdd886750e89f55029882e88c5f0c` passed all gates in [44741557154](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44741557154): 79 JVM and 43 Android cases in two consecutive suites, build/lint, pinned identity, same-key actual update and draft preparation. The earlier failed run belongs to superseded source `24cfb82`, not this candidate.
 - Two consecutive full suites remain mandatory without a failed-suite retry. Per-suite wall-clock bound is 300 seconds for the >60-second real-background/PSS fixture, plus the existing native first-touch/dock/focus assertions.
@@ -30,7 +30,7 @@ For every row record pass/fail, actual result, app version and date. Never recor
 - [ ] All three tabs scroll and remain readable; ID/EN works; no haptic feedback.
 - [ ] Add only installed Flash/Blood Strike; reject other apps/missing games; remove/re-add persists.
 - [ ] Force-close/reopen maintains profiles.
-- [ ] Historical reset/migration: 0.1.1 isolated preview installs alongside 0.1.0; old data stays present, new collection/permissions configured separately. This does not apply to 0.1.2→0.1.3.
+- [ ] Historical reset/migration: 0.1.1 isolated preview installs alongside 0.1.0; old data stays present, new collection/permissions configured separately. This does not apply to the same-key 0.1.2/0.1.3→0.1.4 update.
 - [ ] After the one-time user-approved reset, same-key higher-version APK updates retain local settings; wrong key fails safely. Debug/release must not add different application IDs. Current 0.1.1 cannot directly update to the new key.
 - [ ] Before reset/uninstall, all old sessions are ended and recovery is complete. Fresh data/no import is expected only after the approved reset; never erase an active recovery journal. [Phone checklist](PHONE-RESET.md).
 
@@ -68,7 +68,7 @@ For every row record pass/fail, actual result, app version and date. Never recor
 - [ ] Calls/messages silent, alarms permitted, original DND returns. Check normal calls and WA separately.
 - [ ] WA continues receiving messages; there is no WA shortcut/recorder.
 - [ ] Tap/swipe open, drag handle left/right/top, reopen panel after rotation, close restores touch access to game.
-- [ ] Top tab approaches the physical edge when system bars are hidden; visible status/cutout protection remains, and its glyph center stays outside mandatory gestures. Check transient status bars and both landscape rotations; notification swipe must still work. Test first/repeated chevron-center taps at all three docks. Use the published 0.1.3 same-key test preview as an in-place update from 0.1.2; end/recover sessions first, do not uninstall or clear data.
+- [ ] Top tab approaches the physical edge when system bars are hidden; visible status/cutout protection remains, and its glyph center stays outside mandatory gestures. Check transient status bars and both landscape rotations; notification swipe must still work. Test first/repeated chevron-center taps at all three docks. Use the 0.1.4 same-key test preview as an in-place update from 0.1.2 or 0.1.3; end/recover sessions first, do not uninstall or clear data.
 - [ ] Open panel takes input focus only while open. Game input/focus/audio resume after arrow or Back; check each game does not unexpectedly pause/reload.
 - [ ] Metrics visible only inside panel. Battery temp agrees with public battery data; RAM is system available RAM.
 - [ ] FPS explicitly unavailable; no simulated values.

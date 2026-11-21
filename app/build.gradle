@@ -1,6 +1,6 @@
 plugins { id 'com.android.application' }
 // CI-only higher-version replacement probe; never a publication artifact.
-def appVersionCode = 4
+def appVersionCode = 5
 def updateProbe = project.findProperty('spacesUpdateProbe') == 'true'
 android {
     namespace 'id.veldafelix.spaces'
@@ -10,7 +10,7 @@ android {
         minSdk 33
         targetSdk 34
         versionCode (appVersionCode + (updateProbe ? 1 : 0))
-        versionName '0.1.3'
+        versionName '0.1.4'
         resValue 'string', 'app_name', 'spaces : mobile'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }

@@ -1,4 +1,15 @@
-# spaces : mobile — 0.1.3 stability test preview (not final)
+# spaces : mobile — 0.1.4 same-key update candidate (not final)
+
+VersionCode 5 is the next in-place update after the published 0.1.3/code 4 preview. It keeps the same `id.veldafelix.spaces.preview2` package and pinned signing key. The source/signing/emulator/update checks for this exact candidate must pass before offering its APK. No uninstall, data clear, or reset is part of this update.
+
+This candidate adds automatic Shizuku UserService binding when Spaces resumes or Shizuku returns, clearer live/connecting/failure states, a single bounded reconnect after a service disconnect, and visible failure details in Device. Session charts show local-time labels and exact selected sample times/values; missing intervals remain gaps. Neither feature is yet validated on the TECNO/HiOS device. No FPS, memory-leak, or performance gain is claimed.
+
+**Manual TECNO/HiOS, Shizuku and gameplay validation remain pending.** Do not install until the matching same-key test preview link is published after all automated gates succeed. End and recover any active session before installing; install over the existing app and preserve its data.
+
+---
+
+## Previous test preview: 0.1.3 (historical)
+
 
 **Automated checks passed** for exact source `bafbe42a296cdd886750e89f55029882e88c5f0c`: [run 44741557154](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44741557154) — build/lint, 79 JVM tests, 43 Android instrumentation tests in two consecutive suites, pinned signing identity, and same-key update/data-retention verification. **Manual TECNO/HiOS, Shizuku and gameplay validation remain pending.** This is a test preview, not a final app or an FPS/stability guarantee.
 

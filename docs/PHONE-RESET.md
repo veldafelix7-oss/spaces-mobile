@@ -1,8 +1,8 @@
-# Pembaruan tanpa reset — kandidat 0.1.3
+# Pembaruan tanpa reset — kandidat 0.1.4
 
-Jika sudah memakai **0.1.2**, revisi 0.1.3 disiapkan sebagai **update langsung** dengan paket/kunci yang sama. **Jangan uninstall, hapus data, atau mengulangi reset.** Akhiri/pulihkan sesi lebih dulu dan pasang hanya setelah link test preview yang lolos seluruh pemeriksaan tersedia. Riwayat lama, profil dan draft sesi harus tetap terbaca; tidak ada penggabungan otomatis dengan paket 0.1.0 yang berbeda.
+Jika sudah memakai **0.1.2 atau 0.1.3**, revisi 0.1.4 disiapkan sebagai **update langsung** dengan package dan signing key yang sama, versionCode 5. **Jangan uninstall, hapus data, atau mengulangi reset.** Akhiri/pulihkan sesi lebih dulu dan pasang hanya setelah link test preview yang lolos seluruh pemeriksaan tersedia. Riwayat lama, profil dan draft sesi harus tetap terbaca; tidak ada penggabungan otomatis dengan paket 0.1.0 yang berbeda.
 
-Bagian di bawah adalah **arsip perpindahan sekali ke 0.1.2**, bukan instruksi reset untuk update 0.1.3.
+Bagian di bawah adalah **arsip perpindahan sekali ke 0.1.2**, bukan instruksi reset untuk update 0.1.4.
 
 ---
 

@@ -4,13 +4,13 @@ Native Android game space for **Tecno Spark 20C (BG7), Android 13 / HiOS 13**, d
 
 ## Download and verified checks
 
-**0.1.3 stability test preview is available — not final.** Exact source `bafbe42a296cdd886750e89f55029882e88c5f0c` passed build/lint, 79 JVM tests, two consecutive 43-test Android suites, pinned-key identity and actual same-key data-preserving update: [44741557154](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44741557154). [Download 0.1.3 for Android 13](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.3-bafbe42/spaces-mobile-preview.apk) · [release/checksum](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.3-bafbe42). SHA-256: `6d2a92c98e72ac862bea145bb54d1e5e458920593e3e3892ad4e087511e22242`.
+**0.1.4 same-key update candidate (code 5), not final.** It includes the Shizuku reconnect/status and session-chart improvements. The source, signing, emulator, and update gates must pass before this candidate is offered for installation. The previously published [0.1.3 test preview](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.3-bafbe42) is retained as history; it is not this candidate. Real TECNO/HiOS/Shizuku/gameplay validation remains separate.
 
-**If you have 0.1.2 installed:** this is a direct in-place update with the same package and key. End/recover any active session, download the APK, then install over the app. **Do not uninstall or clear data**; local profile/history are intended to remain. Real TECNO/HiOS/Shizuku/gameplay checks are still pending. No leak, anti-kill or FPS/battery improvement is claimed. [Evidence and repair scope](docs/MEMORY-STABILITY.md) · [update notes](docs/RELEASE-NOTES.md).
+**If you have 0.1.2 or 0.1.3 installed:** the 0.1.4 candidate is intended as a direct in-place update with the same package and key, using a higher versionCode. End/recover any active session, then install only after its preview link is available. **Do not uninstall or clear data**; local profile/history are intended to remain. Real TECNO/HiOS/Shizuku/gameplay checks are still pending. No leak, anti-kill or FPS/battery improvement is claimed. [Evidence and repair scope](docs/MEMORY-STABILITY.md) · [update notes](docs/RELEASE-NOTES.md).
 
-**0.1.2 is the previous test preview**, retained for historical reference. 0.1.2 was the one-time migration from old-key 0.1.1; the reset directions below apply only if you are still on that old-key installation, not to 0.1.2→0.1.3. Always end/recover old sessions before any uninstall; [phone checklist](docs/PHONE-RESET.md).
+**0.1.2 and 0.1.3 are previous test previews**, retained for historical reference. 0.1.2 was the one-time migration from old-key 0.1.1; reset directions apply only if you are still on that old-key installation, not to updates from 0.1.2/0.1.3 to 0.1.4. Always end/recover old sessions before any uninstall; [phone checklist](docs/PHONE-RESET.md).
 
-## Scope: repair-only 0.1.3 preview; no proven performance gain
+## Scope: 0.1.4 repair/update candidate; no proven performance gain
 
 The app is functional groundwork with honest capability boundaries. A command's successful readback is **not** proof of a higher FPS. Testing on the actual BG7 is necessary; emulator results cannot certify HiOS or game compatibility.
 
@@ -31,7 +31,7 @@ Render downscale (especially HiOS Android 13), SurfaceFlinger FPS capture, proce
 
 ## Build and install (phone-only friendly)
 
-Only use the manually published test-preview link after **all** source, signing, identity, Android and real installation gates pass for that APK. A successful build job alone is not approval to install. 0.1.3 is published as a same-key update preview. End/recover active sessions before updating; no uninstall or reset. The [phone reset checklist](docs/PHONE-RESET.md) applies only to the historical one-time 0.1.1→0.1.2 migration. The probe APK is CI-only and must not be installed on the phone.
+Only use the manually published test-preview link after **all** source, signing, identity, Android and real installation gates pass for that APK. A successful build job alone is not approval to install. The 0.1.4 candidate keeps the existing package/key and raises versionCode from 4 to 5 for an in-place update; end/recover active sessions first, and do not uninstall or clear data. The [phone reset checklist](docs/PHONE-RESET.md) applies only to the historical one-time 0.1.1→0.1.2 migration. The higher-version probe is CI-only and must not be installed on the phone.
 
 ### Fixed signing identity for preview and release
 Both build types retain `id.veldafelix.spaces.preview2` and use the same privately backed-up PKCS12 key. The single repository secret is `SPACES_PREVIEW_SIGNING_BUNDLE`; its configuration has already been validated. There is **no cache/random-key fallback**. CI fails closed on a missing, malformed or wrong key; credential-free local builds are unsigned. Never paste the bundle into chat or publish it.
