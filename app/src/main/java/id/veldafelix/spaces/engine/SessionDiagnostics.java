@@ -57,9 +57,18 @@ public final class SessionDiagnostics {
             default: return s.t("Belum diketahui","Unknown");
         }
     }
-    public static String shizukuLabel(Store s) {
-        switch(PrivilegeBridge.state()) {
+    public static String shizukuLabel(Store s) { return shizukuLabel(s,PrivilegeBridge.state()); }
+    public static String shizukuLabel(Store s,String state) { return shizukuLabel(s,state,""); }
+    public static String shizukuLabel(Store s,String state,String failure) {
+        failure=failure==null?"":failure;
+        switch(state) {
             case "ready": return s.t("Shizuku tersambung · izin siap","Shizuku connected · authorized");
+            case "connecting": return s.t("Shizuku diizinkan · menyambungkan layanan…","Shizuku authorized · connecting service…");
+            case "error":
+                String failure=PrivilegeBridge.lastFailure();
+                if(failure.length()>72) failure=failure.substring(0,69)+"…";
+                return s.t("Shizuku diizinkan · layanan gagal tersambung","Shizuku authorized · service connection failed")+
+                    (failure.isEmpty()?"":" · "+failure);
             case "authorized": return s.t("Shizuku diizinkan · layanan belum tersambung","Shizuku authorized · service not connected");
             case "permission": return s.t("Shizuku memerlukan izin","Shizuku needs permission");
             default: return s.t("Shizuku belum terhubung","Shizuku not connected");

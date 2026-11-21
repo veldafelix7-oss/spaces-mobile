@@ -50,6 +50,9 @@ For every row record pass/fail, actual result, app version and date. Never recor
 
 ### Shizuku and recovery (test conservatively)
 - [ ] No Shizuku installed, not running, permission denied, permission granted.
+- [ ] With Shizuku already running and Spaces already authorized, cold-open/resume Spaces: it should attempt UserService binding without asking for repeated pairing. Verify the UI distinguishes connecting, connection failure, permission and a live binder; only a live binder is labelled connected. Record the app/manager versions and any displayed failure category.
+- [ ] Stop/restart Shizuku while Spaces is backgrounded, then resume. Confirm stale callbacks do not report connected, a new bind is attempted, and no settings are applied merely by reconnecting.
+- [ ] Stop only the UserService while the app is foregrounded: verify one bounded reconnect attempt, then an actionable failure state if it does not return; no unbounded retry loop or profile application.
 - [ ] Record refresh settings and GameManager mode before test.
 - [ ] 60/90 option appears only if reported by display modes.
 - [ ] Apply one option; inspect engine log and readback. Do not confuse readback with FPS gain.

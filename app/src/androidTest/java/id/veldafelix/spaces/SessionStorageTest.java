@@ -68,6 +68,13 @@ public class SessionStorageTest {
         assertFalse(report.contains("setting verified"));assertFalse(report.contains("recovery pending"));
         store.p.edit().putString("language","en").commit();assertTrue(SessionDiagnostics.engineReport(store,raw,true).contains("not proof of increased FPS"));
     }
+    @Test public void shizukuLabelsDistinguishPermissionFromARealServiceConnection() {
+        assertTrue(SessionDiagnostics.shizukuLabel(store,"authorized").contains("layanan belum tersambung"));
+        assertTrue(SessionDiagnostics.shizukuLabel(store,"connecting").contains("menyambungkan"));
+        assertTrue(SessionDiagnostics.shizukuLabel(store,"error").contains("gagal tersambung"));
+        assertTrue(SessionDiagnostics.shizukuLabel(store,"error","UserService connection timed out").contains("connection timed out"));
+        assertTrue(SessionDiagnostics.shizukuLabel(store,"ready").contains("tersambung"));
+    }
     @Test public void shizukuExecutionNeverBlocksMainThread() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync(()->assertEquals("ERR:main thread",PrivilegeBridge.exec(c,ShellPolicy.READ_SETTING,"peak_refresh_rate","")));
     }

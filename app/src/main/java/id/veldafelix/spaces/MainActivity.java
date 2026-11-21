@@ -33,6 +33,7 @@ public final class MainActivity extends Activity {
     private boolean registered=false,launching=false,resumed=false;
     private String pendingLaunch;
     private AlertDialog reportWindow;
+    private TextView shizukuHeader,shizukuPermission;
     private final Handler main=new Handler(Looper.getMainLooper());
     private final BroadcastReceiver sessionReady=new BroadcastReceiver() {
         @Override public void onReceive(Context c,Intent intent) {
@@ -40,12 +41,16 @@ public final class MainActivity extends Activity {
             if(resumed) launchGame(intent.getStringExtra("game"));
         }
     };
+    private final Runnable shizukuStateChanged=()->refreshShizukuLabels();
     private final Shizuku.OnRequestPermissionResultListener shizukuResult=(request,grant)->runOnUiThread(()->{
         if(grant==PackageManager.PERMISSION_GRANTED) PrivilegeBridge.bind(getApplicationContext());
-        if(resumed) render();
+        refreshShizukuLabels();
     });
-    private final Shizuku.OnBinderReceivedListener binderReceived=()->runOnUiThread(()->{ if(resumed) render(); });
-    private final Shizuku.OnBinderDeadListener binderDead=()->runOnUiThread(()->{ if(resumed) render(); });
+    private final Shizuku.OnBinderReceivedListener binderReceived=()->runOnUiThread(()->{
+        if(resumed && PrivilegeBridge.authorized()) PrivilegeBridge.bind(getApplicationContext());
+        refreshShizukuLabels();
+    });
+    private final Shizuku.OnBinderDeadListener binderDead=()->runOnUiThread(this::refreshShizukuLabels);
     @Override public void onCreate(Bundle state) {
         super.onCreate(state); store=new Store(this);
         final Store migrationStore=store;
@@ -69,16 +74,27 @@ public final class MainActivity extends Activity {
             |View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
     @Override public void onWindowFocusChanged(boolean focused) { super.onWindowFocusChanged(focused);if(focused) immersive(); }
-    @Override protected void onResume() { super.onResume(); resumed=true; installationCache.clear();iconCache.clear();render(); }
-    @Override protected void onPause() { resumed=false; super.onPause(); }
+    @Override protected void onResume() {
+        super.onResume();resumed=true;installationCache.clear();iconCache.clear();
+        PrivilegeBridge.setStateListener(shizukuStateChanged);render();
+        if(PrivilegeBridge.authorized()) PrivilegeBridge.bind(getApplicationContext());
+    }
+    @Override protected void onPause() { resumed=false;PrivilegeBridge.setStateListener(null);super.onPause(); }
     @Override protected void onStop() {
         super.onStop();releaseUi();
     }
     private void releaseUi() {
         if(isDestroyed()) return;
         if(reportWindow!=null) { reportWindow.dismiss();reportWindow=null; }
-        page=null;pageScroll=null;Arrays.fill(navigation,null);iconCache.clear();installationCache.clear();
+        page=null;pageScroll=null;shizukuHeader=null;shizukuPermission=null;
+        Arrays.fill(navigation,null);iconCache.clear();installationCache.clear();
         setContentView(new FrameLayout(this));
+    }
+    private void refreshShizukuLabels() {
+        if(!resumed || store==null) return;
+        String state=PrivilegeBridge.state();
+        if(shizukuHeader!=null) shizukuHeader.setText("●  "+SessionDiagnostics.shizukuLabel(store,state));
+        if(shizukuPermission!=null) shizukuPermission.setText(SessionDiagnostics.shizukuLabel(store,state,PrivilegeBridge.lastFailure()));
     }
     @Override public void onTrimMemory(int level) {
         super.onTrimMemory(level);
@@ -88,6 +104,7 @@ public final class MainActivity extends Activity {
     @Override protected void onDestroy() {
         main.removeCallbacksAndMessages(null);
         if(registered) unregisterReceiver(sessionReady);
+        PrivilegeBridge.setStateListener(null);
         Shizuku.removeRequestPermissionResultListener(shizukuResult);
         Shizuku.removeBinderReceivedListener(binderReceived);
         Shizuku.removeBinderDeadListener(binderDead);
@@ -118,6 +135,7 @@ public final class MainActivity extends Activity {
     }
     private void render() {
         if(isFinishing() || isDestroyed() || !resumed || store==null) return;
+        shizukuHeader=null;shizukuPermission=null;
         FrameLayout root=new FrameLayout(this); root.addView(new Glass.Background(this),new FrameLayout.LayoutParams(-1,-1));
         LinearLayout shell=Glass.row(this); shell.setGravity(Gravity.TOP); shell.setPadding(dp(14),dp(14),dp(20),dp(10));
         root.addView(shell,new FrameLayout.LayoutParams(-1,-1));
@@ -145,6 +163,7 @@ public final class MainActivity extends Activity {
         header.addView(heading,new LinearLayout.LayoutParams(0,-2,1));
         String state=PrivilegeBridge.state();
         TextView status=text("●  "+SessionDiagnostics.shizukuLabel(store),10,Glass.ACCENT,true);
+        shizukuHeader=status;
         status.setPadding(dp(12),dp(9),dp(12),dp(9)); status.setBackground(Glass.surface(0x99FFFFFF,dp(20)));
         status.setMinHeight(dp(44));status.setGravity(Gravity.CENTER);status.setOnClickListener(v->selectTab(2)); header.addView(status);
         body.addView(header); Glass.gap(body,17);
@@ -405,8 +424,7 @@ public final class MainActivity extends Activity {
     private void device() {
         titleRow(t("Perangkat & sesi","Device & sessions"),android.os.Build.MANUFACTURER+" "+android.os.Build.MODEL+" · Android "+Build.VERSION.RELEASE,null,null);
         LinearLayout permissions=Glass.card(this);
-        String state=PrivilegeBridge.state();
-        permission(permissions,"Shizuku",SessionDiagnostics.shizukuLabel(store),this::shizuku);
+        shizukuPermission=permission(permissions,"Shizuku",SessionDiagnostics.shizukuLabel(store,PrivilegeBridge.state(),PrivilegeBridge.lastFailure()),this::shizuku);
         permission(permissions,t("Panel di atas game","Display over games"),Settings.canDrawOverlays(this)?t("Diizinkan","Allowed"):t("Opsional · belum diizinkan","Optional · not allowed"),()->open(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName()))));
         NotificationManager n=getSystemService(NotificationManager.class);
         permission(permissions,t("Jangan Ganggu","Do Not Disturb"),n.isNotificationPolicyAccessGranted()?t("Diizinkan","Allowed"):t("Dibutuhkan untuk Mode Fokus","Required for Focus mode"),()->open(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)));
@@ -474,8 +492,8 @@ public final class MainActivity extends Activity {
         if(reportWindow!=null) reportWindow.dismiss();
         ScrollView scroll=new ScrollView(this);scroll.setTag("session_report_scroll");LinearLayout content=Glass.column(this);content.setPadding(dp(20),dp(6),dp(20),dp(16));scroll.addView(content);
         if(points!=null && points.length()>1) {
-            content.addView(new SessionChart(this,points),new LinearLayout.LayoutParams(-1,dp(140)));
-            content.addView(text(t("Grafik suhu baterai, bukan FPS.\n","Battery temperature chart, not FPS.\n"),11,Glass.MUTED,false));
+            content.addView(new SessionChart(this,points),new LinearLayout.LayoutParams(-1,dp(168)));
+            content.addView(text(t("Suhu baterai · waktu lokal. Ketuk titik untuk melihat jam dan nilai sampel. Celah berarti sampel tidak tercatat; grafik ini bukan FPS.\n","Battery temperature · local time. Tap a point for its exact time and sample. Gaps mean no sample was recorded; this is not FPS.\n"),11,Glass.MUTED,false));
         }
         TextView message=text(body,13,Glass.INK,false);message.setTag("session_report_body");message.setTextIsSelectable(true);message.setLineSpacing(dp(3),1);content.addView(message);
         reportWindow=new AlertDialog.Builder(this).setTitle(title).setView(scroll).setPositiveButton(t("Tutup","Close"),null).create();
@@ -483,13 +501,19 @@ public final class MainActivity extends Activity {
         android.util.DisplayMetrics screen=getResources().getDisplayMetrics();
         reportWindow.getWindow().setLayout(Math.min(dp(680),(int)(screen.widthPixels*.9f)),(int)(screen.heightPixels*.86f));
     }
-    private void permission(LinearLayout parent,String title,String state,Runnable action) {
+    private TextView permission(LinearLayout parent,String title,String state,Runnable action) {
         LinearLayout row=Glass.row(this); row.setPadding(0,dp(7),0,dp(7)); LinearLayout words=Glass.column(this);
-        words.addView(text(title,14,Glass.INK,true)); Glass.gap(words,4); words.addView(text(state,11,Glass.MUTED,false));
+        words.addView(text(title,14,Glass.INK,true)); Glass.gap(words,4);
+        TextView status=text(state,11,Glass.MUTED,false);words.addView(status);
         row.addView(words,new LinearLayout.LayoutParams(0,-2,1)); row.addView(button(t("Atur","Set up"),false,action)); parent.addView(row);
+        return status;
     }
     private void shizuku() {
-        if(PrivilegeBridge.authorized()) { PrivilegeBridge.bind(this); info("Shizuku",t("Izin sudah diberikan. Dukungan setiap pengaturan tetap diperiksa saat sesi dimulai.","Permission granted. Individual settings are still checked when a session starts.")); return; }
+        if(PrivilegeBridge.authorized()) {
+            PrivilegeBridge.bind(getApplicationContext());
+            info("Shizuku",t("Izin sudah diberikan. Spaces sedang menyambungkan layanannya; status akan diperbarui otomatis. Belum ada pengaturan yang diterapkan.","Permission is granted. Spaces is connecting its service; status will update automatically. No settings have been applied."));
+            return;
+        }
         if(PrivilegeBridge.state().equals("permission")) {
             try { Shizuku.requestPermission(19); } catch(Exception e) { toast(t("Tidak dapat meminta izin Shizuku.","Unable to request Shizuku permission.")); } return;
         }

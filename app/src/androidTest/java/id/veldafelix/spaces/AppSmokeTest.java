@@ -104,7 +104,8 @@ public class AppSmokeTest {
     @Test public void historyLoadsOnlyTheRequestedChart() throws Exception {
         Store store=new Store(context);store.clearHistory();
         for(int j=0;j<3;j++) {
-            org.json.JSONArray points=new org.json.JSONArray();for(int i=0;i<100;i++) points.put(new org.json.JSONObject().put("at",i*10000).put("temp",35+i*.01));
+            org.json.JSONArray points=new org.json.JSONArray();long chartStart=System.currentTimeMillis()-990000;
+            for(int i=0;i<100;i++) points.put(new org.json.JSONObject().put("at",chartStart+i*10000).put("temp",35+Math.sin(i/8.0)*.7));
             store.saveSession(new org.json.JSONObject().put("id","history-"+j).put("game","com.tencent.igfit").put("reason","manual").put("samples",points));
         }
         click("Perangkat");long deadline=android.os.SystemClock.elapsedRealtime()+10000;
@@ -117,7 +118,15 @@ public class AppSmokeTest {
         click("Grafik & laporan sesi");
         while(reportWindow()==null && android.os.SystemClock.elapsedRealtime()<deadline) android.os.SystemClock.sleep(40);
         android.app.AlertDialog dialog=reportWindow();assertNotNull(dialog);inst.waitForIdleSync();
-        inst.runOnMainSync(()->assertNotNull(findType(dialog.getWindow().getDecorView(),id.veldafelix.spaces.ui.SessionChart.class)));
+        java.util.concurrent.atomic.AtomicReference<id.veldafelix.spaces.ui.SessionChart> chartRef=new java.util.concurrent.atomic.AtomicReference<>();
+        inst.runOnMainSync(()->chartRef.set(findType(dialog.getWindow().getDecorView(),id.veldafelix.spaces.ui.SessionChart.class)));
+        id.veldafelix.spaces.ui.SessionChart chart=chartRef.get();assertNotNull(chart);
+        assertTrue(chart.getContentDescription().toString().contains("local time"));
+        int[] position=new int[2];inst.runOnMainSync(()->chart.getLocationOnScreen(position));
+        long down=android.os.SystemClock.uptimeMillis();float x=position[0]+chart.getWidth()*.55f,y=position[1]+chart.getHeight()*.52f;
+        inst.sendPointerSync(android.view.MotionEvent.obtain(down,down,android.view.MotionEvent.ACTION_DOWN,x,y,0));
+        inst.sendPointerSync(android.view.MotionEvent.obtain(down,down+80,android.view.MotionEvent.ACTION_UP,x,y,0));inst.waitForIdleSync();
+        inst.runOnMainSync(()->assertTrue(chart.getContentDescription().toString(),chart.getContentDescription().toString().contains("Selected sample")));
         screenshot("06-history-report");store.clearHistory();
     }
     private void shell(String command) throws Exception {
