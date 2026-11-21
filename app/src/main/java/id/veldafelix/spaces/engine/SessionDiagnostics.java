@@ -65,7 +65,6 @@ public final class SessionDiagnostics {
             case "ready": return s.t("Shizuku tersambung · izin siap","Shizuku connected · authorized");
             case "connecting": return s.t("Shizuku diizinkan · menyambungkan layanan…","Shizuku authorized · connecting service…");
             case "error":
-                String failure=PrivilegeBridge.lastFailure();
                 if(failure.length()>72) failure=failure.substring(0,69)+"…";
                 return s.t("Shizuku diizinkan · layanan gagal tersambung","Shizuku authorized · service connection failed")+
                     (failure.isEmpty()?"":" · "+failure);

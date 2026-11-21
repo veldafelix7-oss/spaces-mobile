@@ -18,6 +18,7 @@ public final class PrivilegeBridge {
     private static volatile IShell shell;
     private static volatile Runnable stateListener;
     private static boolean binding;
+    private static boolean autoRetryUsed;
     private static long generation;
     private static String lastFailure;
     private static ServiceConnection activeConnection;
@@ -32,7 +33,10 @@ public final class PrivilegeBridge {
     }
     /** Activity listener is detached on pause so it cannot retain a stopped UI. */
     public static void setStateListener(Runnable listener) {
-        stateListener=listener;
+        synchronized(PrivilegeBridge.class) {
+            stateListener=listener;
+            if(listener!=null) autoRetryUsed=false;
+        }
     }
     private static void reset(String failure) {
         resetIfCurrent(-1,failure);
@@ -106,12 +110,16 @@ public final class PrivilegeBridge {
                     changed();
                 }
                 @Override public void onServiceDisconnected(ComponentName name) {
-                    if(resetIfCurrent(attempt,"UserService disconnected")) {
-                        // One bounded reconnect while the user is in Spaces; otherwise retry on next resume.
-                        MAIN.postDelayed(()->{
-                            if(stateListener!=null && authorized()) bind(appContext);
-                        },800);
+                    if(!resetIfCurrent(attempt,"UserService disconnected")) return;
+                    final boolean shouldRetry;
+                    synchronized(PrivilegeBridge.class) {
+                        shouldRetry=stateListener!=null && !autoRetryUsed;
+                        if(shouldRetry) autoRetryUsed=true;
                     }
+                    // At most one automatic reconnect per foreground visit; failed retry does not loop.
+                    if(shouldRetry) MAIN.postDelayed(()->{
+                        if(stateListener!=null && authorized()) bind(appContext);
+                    },800);
                 }
                 @Override public void onBindingDied(ComponentName name) {
                     resetIfCurrent(attempt,"Android reported UserService binding died");
