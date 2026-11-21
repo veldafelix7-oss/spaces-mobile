@@ -1,10 +1,12 @@
 # spaces : mobile — 0.1.4 same-key update candidate (not final)
 
-VersionCode 5 is the next in-place update after the published 0.1.3/code 4 preview. It keeps the same `id.veldafelix.spaces.preview2` package and pinned signing key. The source/signing/emulator/update checks for this exact candidate must pass before offering its APK. No uninstall, data clear, or reset is part of this update.
+VersionCode 5 is the in-place update after the published 0.1.3/code 4 preview. It keeps the same `id.veldafelix.spaces.preview2` package and pinned signing key. Exact source `c204797498a0b5a99ce537c45244d66aed4812e8` passed [run 44917938111](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44917938111): compilation/lint, **79 JVM tests**, **44 Android instrumentation tests in each of two consecutive suites**, pinned identity, and same-key update/data-retention checks from published 0.1.2/code 3 through candidate/code 5 and the CI-only higher-version probe. The new APK is **2,604,509 bytes**, SHA-256 `87586b75f8dfae47071335f235b563252a78a8afd6c43158e1140cccc56ec01a`.
 
-This candidate adds automatic Shizuku UserService binding when Spaces resumes or Shizuku returns, clearer live/connecting/failure states, a single bounded reconnect after a service disconnect, and visible failure details in Device. Session charts show local-time labels and exact selected sample times/values; missing intervals remain gaps. Neither feature is yet validated on the TECNO/HiOS device. No FPS, memory-leak, or performance gain is claimed.
+[Download 0.1.4 Android test preview](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.4-c204797/spaces-mobile-preview.apk) · [release and checksum](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.4-c204797).
 
-**Manual TECNO/HiOS, Shizuku and gameplay validation remain pending.** Do not install until the matching same-key test preview link is published after all automated gates succeed. End and recover any active session before installing; install over the existing app and preserve its data.
+This update adds automatic Shizuku UserService binding when Spaces resumes or Shizuku returns, clearer live/connecting/failure states, a single bounded reconnect after a service disconnect, and visible failure details in Device. Session charts show local-time labels and exact selected sample times/values; missing intervals remain gaps. These are code/emulator-verified only, not yet validated on the TECNO/HiOS device. **Manual TECNO/HiOS, Shizuku and gameplay validation remain pending.** No FPS, memory-leak, or performance gain is claimed.
+
+End and recover any active session before installing; install over the existing app and preserve its data. **Do not uninstall, clear data, or reset.**
 
 ---
 

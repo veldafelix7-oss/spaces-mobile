@@ -1,4 +1,12 @@
-# Verified test preview 0.1.3 — published; phone validation still pending
+# Verified test preview 0.1.4 — published; phone validation still pending
+
+Exact source `c204797498a0b5a99ce537c45244d66aed4812e8` passed [run 44917938111](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44917938111): source compilation/lint, **79 JVM tests**, **44 Android instrumentation tests in two consecutive full suites**, pinned signing identity, actual same-key update/data-retention checks, and preview preparation. The update fixture installed published 0.1.2/code 3, seeded profile, legacy history, active draft/journal and private markers, installed candidate/code 5, then the higher-version probe/code 6; all required data and package identity were verified without uninstall/data reset in update mode. The same-key 0.1.4/code 5 preview [`preview-0.1.4-c204797`](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.4-c204797) is a test preview, not final. APK size 2,604,509 bytes; SHA-256 `87586b75f8dfae47071335f235b563252a78a8afd6c43158e1140cccc56ec01a`. It updates 0.1.2 and 0.1.3 in place; no reset/uninstall.
+
+CI certifies the emulator and same-key update paths only. Shizuku binding on HiOS, TECNO UI, real PUBG/Blood Strike gameplay, low-memory survival, FPS and battery/performance remain unvalidated. No leak or performance gain is proven.
+
+---
+
+## Previous verified preview 0.1.3 — published; phone validation still pending
 
 Exact source `bafbe42a296cdd886750e89f55029882e88c5f0c` passed [run 44741557154](https://github.com/veldafelix7-oss/spaces-mobile/actions/runs/44741557154): compilation/lint, **79 JVM tests**, **43 Android instrumentation tests in two consecutive full suites**, fixed signing identity, and actual same-key update continuity from published 0.1.2/code 3 to candidate/code 4 and higher-version probe. The fixture retained seeded legacy history, profile, active session draft and journal through both replacements; no uninstall or data clear was performed in update mode. The successful manual preview workflow published [`preview-0.1.3-bafbe42`](https://github.com/veldafelix7-oss/spaces-mobile/releases/tag/preview-0.1.3-bafbe42), a **test preview**, not final. APK size 2,594,041 bytes; SHA-256 `6d2a92c98e72ac862bea145bb54d1e5e458920593e3e3892ad4e087511e22242`. Same-package/key update from 0.1.2; no reset/uninstall.
 

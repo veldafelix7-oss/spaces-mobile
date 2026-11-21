@@ -1,6 +1,6 @@
 # Pembaruan tanpa reset — kandidat 0.1.4
 
-Jika sudah memakai **0.1.2 atau 0.1.3**, revisi 0.1.4 disiapkan sebagai **update langsung** dengan package dan signing key yang sama, versionCode 5. **Jangan uninstall, hapus data, atau mengulangi reset.** Akhiri/pulihkan sesi lebih dulu dan pasang hanya setelah link test preview yang lolos seluruh pemeriksaan tersedia. Riwayat lama, profil dan draft sesi harus tetap terbaca; tidak ada penggabungan otomatis dengan paket 0.1.0 yang berbeda.
+Jika sudah memakai **0.1.2 atau 0.1.3**, revisi 0.1.4 adalah **update langsung** dengan package dan signing key yang sama, versionCode 5. Otomatisasi CI menguji instalasi/update dan retensi data pada emulator. [Unduh 0.1.4 test preview](https://github.com/veldafelix7-oss/spaces-mobile/releases/download/preview-0.1.4-c204797/spaces-mobile-preview.apk) · SHA-256 `87586b75f8dfae47071335f235b563252a78a8afd6c43158e1140cccc56ec01a`. **Jangan uninstall, hapus data, atau mengulangi reset.** Akhiri/pulihkan sesi lebih dulu dan pasang APK di atas aplikasi yang ada; Android mungkin meminta konfirmasi. Riwayat lama, profil dan draft sesi diuji tetap terbaca pada emulator; perilaku HP/HiOS nyata tetap perlu diverifikasi. Tidak ada penggabungan otomatis dengan paket 0.1.0 yang berbeda.
 
 Bagian di bawah adalah **arsip perpindahan sekali ke 0.1.2**, bukan instruksi reset untuk update 0.1.4.
 
